@@ -1,7 +1,6 @@
-import React from 'react'
-import { LayoutGrid, BookOpen, Calendar, CheckSquare, Clock, User, GraduationCap, Library } from 'lucide-react'
+import { LayoutGrid, BookOpen, Calendar, User, GraduationCap, Library } from 'lucide-react'
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ activeTab, setActiveTab, user }) => {
   // Helper to determine item class
   const getItemClass = (tabId) => {
     const base = "flex items-center gap-3 px-3 py-2.5 rounded-md text-label-md transition-all cursor-pointer"
@@ -57,21 +56,19 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         {/* Profile Card */}
         <div className="bg-[#F2F4F6] border border-[#E2E8F0] p-4 rounded-lg flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Alex Johnson" className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" />
+            <img 
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
+              alt={user.name} 
+              className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" 
+            />
             <div className="flex flex-col min-w-0">
-              <span className="text-label-md text-on-surface font-semibold truncate leading-tight">Alex Johnson</span>
-              <span className="text-label-sm text-on-surface-variant truncate leading-none">Computer Science</span>
+              <span className="text-label-md text-on-surface font-semibold truncate leading-tight">{user.name}</span>
+              <span className="text-label-sm text-on-surface-variant truncate leading-none mt-0.5">{user.program}</span>
             </div>
           </div>
-          {/* Progress Bar */}
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-label-sm font-medium text-on-surface-variant">
-              <span>Semester Progress</span>
-              <span>72%</span>
-            </div>
-            <div className="w-full bg-[#E0E3E5] rounded-full h-1.5 overflow-hidden">
-              <div className="bg-[#2563eb] h-full rounded-full" style={{ width: '72%' }}></div>
-            </div>
+          <div className="flex items-center justify-between text-label-sm font-semibold pt-1 border-t border-slate-200">
+            <span className="text-slate-500">STAG Account</span>
+            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-sm">Connected</span>
           </div>
         </div>
       </div>

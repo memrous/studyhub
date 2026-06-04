@@ -1,100 +1,86 @@
-import React from 'react'
-import { Share2, Orbit, Landmark, TrendingUp, FileText, Star } from 'lucide-react'
+import { Database, Globe, Code2, Monitor, GitBranch, Network, BookOpen, User } from 'lucide-react'
 
-const SubjectCard = ({ code, title, nextClass, icon, color, footerType, footerVal }) => {
-  // Map icons
-  const renderIcon = () => {
-    const className = "w-5 h-5"
-    switch (icon) {
-      case 'share': return <Share2 className={className} />
-      case 'orbit': return <Orbit className={className} />
-      case 'landmark': return <Landmark className={className} />
-      case 'trending-up': return <TrendingUp className={className} />
-      default: return <Share2 className={className} />
-    }
-  }
+const SUBJECT_ICONS = {
+  DBS: Database,
+  WA: Globe,
+  PROG: Code2,
+  OS: Monitor,
+  SE: GitBranch,
+  NET: Network,
+};
 
-  // Map color schemes
-  const getColors = () => {
-    switch (color) {
-      case 'blue': return {
-        bg: 'bg-[#eeefff]',
-        text: 'text-[#004ac6]',
-        border: 'border-blue-100'
-      }
-      case 'orange': return {
-        bg: 'bg-[#ffede6]',
-        text: 'text-[#bc4800]',
-        border: 'border-orange-100'
-      }
-      case 'purple': return {
-        bg: 'bg-[#f3e8ff]',
-        text: 'text-purple-700',
-        border: 'border-purple-100'
-      }
-      case 'green': return {
-        bg: 'bg-[#e6f4ea]',
-        text: 'text-emerald-700',
-        border: 'border-emerald-100'
-      }
-      default: return {
-        bg: 'bg-slate-100',
-        text: 'text-slate-700',
-        border: 'border-slate-200'
-      }
-    }
-  }
+const SubjectIcon = ({ code }) => {
+  const key = Object.keys(SUBJECT_ICONS).find(k => code.includes(k));
+  const Icon = key ? SUBJECT_ICONS[key] : BookOpen;
+  return <Icon className="w-5 h-5" />;
+};
 
-  const styles = getColors()
-
+const SubjectCard = ({ subject, onSelect }) => {
+  
   return (
-    <div className="bg-white border border-[#E2E8F0] p-5 rounded-lg shadow-ambient hover:shadow-md transition-shadow flex flex-col justify-between h-48 font-inter">
-      <div>
-        <div className="flex justify-between items-start">
-          <div className={`w-10 h-10 ${styles.bg} ${styles.text} flex items-center justify-center rounded-md`}>
-            {renderIcon()}
-          </div>
-          <span className={`text-label-sm font-semibold ${styles.bg} ${styles.text} px-2 py-0.5 rounded-sm`}>
-            {code}
-          </span>
+    <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient hover:shadow-md transition-shadow flex flex-col p-5 gap-4 font-inter">
+      {/* Header: Icon + Mandatory/Elective Badge */}
+      <div className="flex items-start justify-between">
+        <div className="w-10 h-10 bg-[#eeefff] text-[#004ac6] flex items-center justify-center rounded-md shrink-0">
+          <SubjectIcon code={subject.code} />
         </div>
-        <h3 className="text-headline-md text-on-surface mt-3">{title}</h3>
-        <p className="text-body-md text-[#737686] mt-1">{nextClass}</p>
+        <span className={`text-label-sm font-bold px-2.5 py-0.5 rounded-sm ${
+          subject.isMandatory 
+            ? 'bg-[#eeefff] text-[#004ac6]' 
+            : 'bg-[#e6f4ea] text-emerald-700'
+        }`}>
+          {subject.isMandatory ? 'Mandatory' : 'Elective'}
+        </span>
       </div>
 
-      {/* Footer contents based on footerType */}
-      <div className="mt-3">
-        {footerType === 'avatars' && (
-          <div className="flex items-center gap-1.5">
-            <div className="flex -space-x-2">
-              <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-slate-700">A</div>
-              <div className="w-7 h-7 rounded-full bg-slate-300 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-slate-800">B</div>
-            </div>
-            <span className="text-label-sm text-[#737686] font-medium">+{footerVal || '12'}</span>
-          </div>
-        )}
+      {/* Meta Row: Code + Credits */}
+      <div className="flex items-center gap-2">
+        <span className="text-label-sm font-extrabold text-primary uppercase tracking-wide">
+          {subject.code}
+        </span>
+        <span className="w-1 h-1 rounded-full bg-[#737686] shrink-0" />
+        <span className="text-label-sm text-[#737686] font-semibold">
+          {subject.credits} Credits
+        </span>
+      </div>
 
-        {footerType === 'progress' && (
-          <div className="w-full">
-            <div className={`w-full ${styles.bg} rounded-full h-1.5`}>
-              <div className="bg-[#bc4800] h-full rounded-full" style={{ width: `${footerVal || 40}%` }}></div>
-            </div>
-          </div>
-        )}
+      {/* Title & Description */}
+      <div className="flex flex-col gap-1.5">
+        <h3 className="text-headline-md font-bold text-on-surface leading-snug">
+          {subject.name}
+        </h3>
+        <p className="text-body-md text-[#737686] line-clamp-2 leading-relaxed">
+          {subject.description}
+        </p>
+      </div>
 
-        {footerType === 'readings' && (
-          <div className={`flex items-center gap-1.5 text-label-sm ${styles.text} ${styles.bg}/50 px-2.5 py-1 rounded-sm w-fit`}>
-            <FileText className="w-3.5 h-3.5" />
-            <span>{footerVal || '8'} Readings Pending</span>
-          </div>
-        )}
+      {/* Course Info details */}
+      <div className="grid grid-cols-2 gap-2 text-body-md text-[#737686] mt-1">
+        <div className="flex items-center gap-1.5">
+          <User className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+          <span className="truncate text-[13px] font-medium" title={subject.lecturer}>
+            {subject.lecturer}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 justify-end">
+          <span className="text-[13px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-sm">
+            {subject.completionType}
+          </span>
+        </div>
+      </div>
 
-        {footerType === 'grade' && (
-          <div className={`flex items-center gap-1 text-label-sm ${styles.text} ${styles.bg} px-2 py-0.5 rounded-sm w-fit font-semibold`}>
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span>Grade: {footerVal || 'A'}</span>
-          </div>
-        )}
+      {/* Semester Details & Open Button */}
+      <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+        <span className="text-label-sm text-[#737686] font-semibold">
+          {subject.semester} Semester
+        </span>
+        
+        <button 
+          onClick={() => onSelect?.(subject)}
+          className="bg-[#004ac6] hover:bg-[#003ea8] active:scale-[0.98] text-white font-semibold px-4 py-2 rounded-md text-label-md transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+        >
+          Open Subject
+        </button>
       </div>
     </div>
   )

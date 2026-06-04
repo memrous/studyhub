@@ -1,411 +1,375 @@
-// ============================================================
-// START: SubjectDetailView.jsx — Subject Detail Page
-// Integrates into <main> via App.jsx activeTab === 'subject-detail'
-// Props: subject (object), onBack (function to return to subjects list)
-// If no subject prop is passed, falls back to MOCK_SUBJECT
-// ============================================================
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   ArrowLeft,
   User,
   BookOpen,
   ShieldCheck,
-  Play,
   Download,
-  MoreVertical,
+  ExternalLink,
   FileText,
   Code2,
-  CheckCircle2,
   Circle,
   CalendarDays,
-  ClipboardList,
   CheckCheck,
-  Minus,
-  ChevronRight,
   Info,
-  Clock,
-  BarChart2,
-  Settings,
+  Bookmark
 } from 'lucide-react'
 
-// ─── Mock Data (used as fallback when no subject prop is provided) ───
-export const MOCK_SUBJECT = {
-  code: 'CS 302',
-  semester: 5,
-  title: 'Database Systems',
-  instructor: 'Dr. Emily Carter',
-  credits: 6,
-  type: 'Mandatory',
-  color: 'blue',
-  description:
-    'Exploration of relational databases, SQL optimization, and data modeling. This course covers the fundamental concepts required to design and implement efficient, scalable data storage solutions. Key topics include normalization, transaction management, and noSQL alternatives.',
-  learningHours: 120,
-  difficulty: 'Intermediate',
-  progress: 65,
-  modules: [
-    { id: 1, title: 'Module 1: Relational Model',   completed: true },
-    { id: 2, title: 'Module 2: SQL Advanced',        completed: true },
-    { id: 3, title: 'Module 3: Indexing & Tuning',   completed: false },
-  ],
-  lectures: [
-    {
-      id: 1,
-      title: 'Introduction to SQL',
-      module: 'Module 1',
-      date: 'Oct 5, 2023',
-      attachments: [
-        { name: 'Intro_to_SQL.pdf',  type: 'pdf' },
-        { name: 'exercise_1.sql',    type: 'code' },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Normalization Forms',
-      module: 'Module 2',
-      date: 'Oct 12, 2023',
-      attachments: [
-        { name: 'Normalization_Rules.pdf', type: 'pdf' },
-      ],
-    },
-    {
-      id: 3,
-      title: 'Indexing Strategies',
-      module: 'Module 3',
-      date: 'Oct 20, 2023',
-      attachments: [
-        { name: 'Indexing_Slides.pdf', type: 'pdf' },
-      ],
-    },
-  ],
-  deadlines: [
-    {
-      id: 1,
-      urgency: 'IN 3 DAYS',
-      urgentColor: 'text-primary',
-      title: 'Final Project Proposal',
-      desc: 'Submit schema draft via LMS',
-    },
-    {
-      id: 2,
-      urgency: 'MAY 14',
-      urgentColor: 'text-[#737686]',
-      title: 'Midterm Exam',
-      desc: 'Covers Modules 1-4 • Hall B',
-    },
-  ],
-  assignments: [
-    { id: 1, title: 'Project 1: Schema Design',      status: 'graded',      grade: '100/100' },
-    { id: 2, title: 'Project 2: Query Optimization',  status: 'in-progress', grade: null },
-  ],
-}
+// Tab definitions
+const TABS = ['Overview', 'Materials', 'Assignments', 'Tests & Exams']
 
-// ─── Tabs definition ─────────────────────────────────────────
-const TABS = ['Overview', 'Lectures', 'Assignments', 'Tests & Exams', 'Materials', 'Grades']
+const getResourceTypeIcon = (type) => {
+  switch (type) {
+    case 'PDF': return FileText;
+    case 'SLIDES': return Code2;
+    case 'LINK': return ExternalLink;
+    case 'NOTES': return Bookmark;
+    default: return FileText;
+  }
+};
 
-// ─── Attachment chip ─────────────────────────────────────────
-const AttachmentChip = ({ attachment }) => {
-  const isPdf  = attachment.type === 'pdf'
-  const isCode = attachment.type === 'code'
+const getRelativeDaysLabel = (dateStr) => {
+  if (dateStr === '2026-12-20') return '20 December';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Due Today';
+  if (diffDays === 1) return 'Due Tomorrow';
+  if (diffDays > 1) return `Due in ${diffDays} days`;
+  if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} days`;
+  return dateStr;
+};
+
+// ─── Overview Tab Content ─────────────────────────────────────
+const OverviewTab = ({ subject, events }) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Upcoming deadlines specific to this subject
+  const upcomingDeadlines = events
+    .filter(e => e.subjectId === subject.id && e.type !== 'Lecture' && e.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-sm border ${
-      isPdf  ? 'bg-[#ffdad6]/50 text-[#ba1a1a] border-[#ffdad6]' :
-      isCode ? 'bg-[#eeefff]/60 text-[#004ac6] border-[#dbe1ff]' :
-               'bg-[#eceef0]   text-[#434655] border-[#E2E8F0]'
-    }`}>
-      {isPdf  && <FileText className="w-3 h-3" />}
-      {isCode && <Code2    className="w-3 h-3" />}
-      {!isPdf && !isCode && <FileText className="w-3 h-3" />}
-      {attachment.name}
-    </span>
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
+      {/* Left column */}
+      <div className="flex flex-col gap-6">
+        {/* Subject Description Card */}
+        <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-primary shrink-0" />
+            <h3 className="text-label-md font-bold text-on-surface">Course Description</h3>
+          </div>
+          <p className="text-body-md text-[#434655] leading-relaxed">{subject.description}</p>
+          
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div className="bg-[#F2F4F6] border border-[#E2E8F0] rounded-md p-4">
+              <p className="text-label-sm text-[#737686] uppercase tracking-wider font-bold mb-1">Completion Criteria</p>
+              <p className="text-headline-md font-bold text-on-surface">{subject.completionType}</p>
+            </div>
+            <div className="bg-[#F2F4F6] border border-[#E2E8F0] rounded-md p-4">
+              <p className="text-label-sm text-[#737686] uppercase tracking-wider font-bold mb-1">Lecturer In Charge</p>
+              <p className="text-headline-md font-bold text-on-surface">{subject.lecturer}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right column: Upcoming deadlines */}
+      <div className="flex flex-col gap-5">
+        <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-5 flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-[#bc4800]" />
+            <h3 className="text-label-md font-bold text-on-surface">Subject Deadlines</h3>
+          </div>
+          
+          <div className="flex flex-col gap-4">
+            {upcomingDeadlines.length === 0 ? (
+              <p className="text-body-md text-[#737686] italic text-center py-4">No upcoming deadlines.</p>
+            ) : (
+              upcomingDeadlines.map((dl, idx) => {
+                const isCritical = dl.date === todayStr || dl.type === 'Exam';
+                return (
+                  <div key={dl.id} className="flex gap-3 items-start relative pl-4">
+                    <div className={`absolute left-[4px] top-[7px] w-2 h-2 rounded-full ${
+                      isCritical ? 'bg-red-600' : 'bg-slate-400'
+                    }`} />
+                    {idx < upcomingDeadlines.length - 1 && (
+                      <div className="absolute left-[7px] top-[15px] bottom-[-20px] w-[1px] bg-[#E2E8F0]" />
+                    )}
+                    <div className="pb-2">
+                      <p className={`text-label-sm font-extrabold uppercase tracking-wider ${
+                        isCritical ? 'text-error' : 'text-slate-500'
+                      }`}>
+                        {getRelativeDaysLabel(dl.date)}
+                      </p>
+                      <p className="text-label-md font-bold text-on-surface mt-0.5">{dl.title}</p>
+                      <span className="text-[10px] text-slate-500 font-semibold uppercase">{dl.type}</span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
-// ─── Lecture row ─────────────────────────────────────────────
-const LectureRow = ({ lecture }) => (
-  <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <div className="flex items-center gap-3 w-full sm:w-auto">
-        {/* Play button */}
-        <div className="w-9 h-9 bg-[#eeefff] text-primary flex items-center justify-center rounded-md shrink-0">
-          <Play className="w-4 h-4 fill-current" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-label-md font-bold text-on-surface leading-tight">{lecture.title}</p>
-          <p className="text-[11px] text-[#737686] mt-0.5">{lecture.module} • {lecture.date}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <button className="text-[#737686] hover:text-on-surface transition-colors cursor-pointer p-1" title="Download">
-          <Download className="w-4 h-4" />
-        </button>
-        <button className="text-[#737686] hover:text-on-surface transition-colors cursor-pointer p-1">
-          <MoreVertical className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-    {/* Attachments */}
-    {lecture.attachments.length > 0 && (
-      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[#f2f4f6]">
-        {lecture.attachments.map(a => <AttachmentChip key={a.name} attachment={a} />)}
-      </div>
-    )}
-  </div>
-)
-
-// ─── Overview Tab Content ─────────────────────────────────────
-const OverviewTab = ({ subject }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
-
-    {/* ── Left column ── */}
-    <div className="flex flex-col gap-6">
-
-      {/* Subject Description Card */}
-      <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-6 flex flex-col gap-5">
-        <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-primary shrink-0" />
-          <h3 className="text-label-md font-bold text-on-surface">Subject Description</h3>
-        </div>
-        <p className="text-body-md text-[#434655] leading-relaxed">{subject.description}</p>
-        {/* Stats row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[#F2F4F6] border border-[#E2E8F0] rounded-md p-4">
-            <p className="text-label-sm text-[#737686] uppercase tracking-wider font-bold mb-1">Learning Hours</p>
-            <p className="text-headline-md font-bold text-on-surface">{subject.learningHours} Total</p>
-          </div>
-          <div className="bg-[#F2F4F6] border border-[#E2E8F0] rounded-md p-4">
-            <p className="text-label-sm text-[#737686] uppercase tracking-wider font-bold mb-1">Difficulty Level</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-headline-md font-bold text-on-surface">{subject.difficulty}</p>
-              <div className="flex gap-0.5">
-                <span className="w-2 h-2 rounded-full bg-primary" />
-                <span className="w-2 h-2 rounded-full bg-primary" />
-                <span className="w-2 h-2 rounded-full bg-[#E0E3E5]" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Lectures */}
-      <div className="flex flex-col gap-4">
-        <h3 className="text-headline-md font-bold text-on-surface">Recent Lectures</h3>
-        <div className="flex flex-col gap-3">
-          {subject.lectures.slice(0, 2).map(lecture => (
-            <LectureRow key={lecture.id} lecture={lecture} />
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* ── Right column ── */}
-    <div className="flex flex-col gap-5">
-
-      {/* Course Progress */}
-      <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-5 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-label-md font-bold text-on-surface">Course Progress</h3>
-          <span className="text-label-md font-extrabold text-primary">{subject.progress}%</span>
-        </div>
-        {/* Progress bar */}
-        <div className="w-full bg-[#E0E3E5] rounded-full h-2 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-700"
-            style={{ width: `${subject.progress}%` }}
-          />
-        </div>
-        {/* Modules checklist */}
-        <div className="flex flex-col gap-2.5 mt-1">
-          {subject.modules.map(mod => (
-            <div key={mod.id} className="flex items-center gap-2.5">
-              {mod.completed
-                ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                : <Circle       className="w-4 h-4 text-[#c3c6d7] shrink-0" />
-              }
-              <span className={`text-body-md leading-tight ${mod.completed ? 'text-on-surface font-medium' : 'text-[#737686]'}`}>
-                {mod.title}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Upcoming Deadlines */}
-      <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-5 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-[#bc4800]" />
-          <h3 className="text-label-md font-bold text-on-surface">Upcoming Deadlines</h3>
-        </div>
-        <div className="flex flex-col gap-4">
-          {subject.deadlines.map((dl, idx) => (
-            <div key={dl.id} className="flex flex-col gap-3">
-              {/* Timeline dot + line */}
-              <div className="flex flex-col items-start gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />
-                {idx < subject.deadlines.length - 1 && (
-                  <div className="w-px h-6 bg-[#E2E8F0]" />
-                )}
-              </div>
-              <div className="pb-2">
-                <p className={`text-label-sm font-extrabold uppercase tracking-wider ${dl.urgentColor}`}>
-                  {dl.urgency}
-                </p>
-                <p className="text-label-md font-bold text-on-surface mt-0.5">{dl.title}</p>
-                <p className="text-[11px] text-[#737686] mt-0.5">{dl.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Current Assignments */}
-      <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-5 flex flex-col gap-4">
-        <h3 className="text-label-md font-bold text-on-surface">Current Assignments</h3>
-        <div className="flex flex-col gap-2">
-          {subject.assignments.map(asgn => (
-            <div key={asgn.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#F2F4F6] border border-[#E2E8F0] rounded-md px-3 py-3">
-              <div className="min-w-0">
-                <p className="text-label-md font-bold text-on-surface leading-tight">{asgn.title}</p>
-                {asgn.status === 'graded' ? (
-                  <p className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider mt-0.5">
-                    Graded: {asgn.grade}
-                  </p>
-                ) : (
-                  <p className="text-[10px] font-extrabold text-[#bc4800] uppercase tracking-wider mt-0.5">
-                    Status: In Progress
-                  </p>
-                )}
-              </div>
-              {asgn.status === 'graded'
-                ? <CheckCheck className="w-4 h-4 text-primary shrink-0" />
-                : <Minus      className="w-4 h-4 text-[#bc4800] shrink-0" />
-              }
-            </div>
-          ))}
-        </div>
-        <button className="w-full sm:w-auto border border-[#E2E8F0] rounded-md py-2 text-label-md font-bold text-on-surface hover:bg-surface-container transition-colors cursor-pointer">
-          VIEW ALL ASSIGNMENTS
-        </button>
-      </div>
-
-    </div>
-  </div>
-)
-
-// ─── Lectures Tab Content ────────────────────────────────────
-const LecturesTab = ({ subject }) => (
-  <div className="flex flex-col gap-4 max-w-3xl">
-    <p className="text-body-md text-[#737686]">{subject.lectures.length} lectures in this course</p>
-    {subject.lectures.map(lecture => (
-      <LectureRow key={lecture.id} lecture={lecture} />
-    ))}
-  </div>
-)
-
-// ─── Generic Placeholder Tab ─────────────────────────────────
-const PlaceholderTab = ({ label }) => (
-  <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-16 flex flex-col items-center gap-3 text-center max-w-lg">
-    <div className="w-12 h-12 bg-[#eeefff] text-primary rounded-full flex items-center justify-center">
-      <BarChart2 className="w-6 h-6" />
-    </div>
-    <p className="text-headline-md font-semibold text-on-surface">{label}</p>
-    <p className="text-body-md text-[#737686]">This section is coming soon.</p>
-  </div>
-)
-
-// ─── Main SubjectDetailView Component ───────────────────────
-const SubjectDetailView = ({ subject: subjectProp, onBack }) => {
-  const subject = subjectProp ?? MOCK_SUBJECT
-  const [activeTab, setActiveTab] = useState('Overview')
+// ─── Materials Tab Content ────────────────────────────────────
+const MaterialsTab = ({ subject, resources }) => {
+  const subjectResources = resources.filter(r => r.subjectId === subject.id);
 
   return (
-    <>
-      {/* ================================================ */}
-      {/* START: Subject Detail — inner <main> content     */}
-      {/* ================================================ */}
-      <div className="w-full flex flex-col gap-0 font-inter pb-16">
+    <div className="flex flex-col gap-4 max-w-4xl">
+      <div className="flex justify-between items-center">
+        <p className="text-body-md text-[#737686]">{subjectResources.length} materials uploaded for this subject</p>
+      </div>
 
-        {/* ── Back button ── */}
+      {subjectResources.length === 0 ? (
+        <div className="bg-white border border-[#E2E8F0] rounded-lg p-12 text-center text-body-md text-[#737686] italic shadow-ambient">
+          No materials available for this subject yet.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {subjectResources.map(res => {
+            const Icon = getResourceTypeIcon(res.type);
+            const isLink = res.type === 'LINK';
+
+            return (
+              <div 
+                key={res.id} 
+                className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-4 flex items-center justify-between gap-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-slate-100 text-slate-700 flex items-center justify-center rounded-md shrink-0">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-label-md font-bold text-on-surface leading-tight truncate">{res.title}</h4>
+                    <p className="text-[11px] text-[#737686] mt-0.5 truncate">
+                      {res.description} • {res.size || 'Attachment'} • Uploaded: {res.uploadDate}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <a 
+                    href={res.url}
+                    target={isLink ? '_blank' : '_self'}
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E2E8F0] hover:bg-[#F2F4F6] rounded-md text-label-md font-semibold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    {isLink ? <ExternalLink className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                    <span>{isLink ? 'Preview' : 'Download'}</span>
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Assignments Tab Content ──────────────────────────────────
+const AssignmentsTab = ({ subject, events, onUpdateStatus }) => {
+  const subjectAssignments = events.filter(e => e.subjectId === subject.id && e.type === 'Assignment');
+
+  return (
+    <div className="flex flex-col gap-4 max-w-4xl">
+      <p className="text-body-md text-[#737686]">{subjectAssignments.length} assignments tracked</p>
+      
+      {subjectAssignments.length === 0 ? (
+        <div className="bg-white border border-[#E2E8F0] rounded-lg p-12 text-center text-body-md text-[#737686] italic shadow-ambient">
+          No assignments listed for this subject.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {subjectAssignments.map(asgn => {
+            const isSubmitted = asgn.status === 'Submitted';
+            return (
+              <div 
+                key={asgn.id} 
+                className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <h4 className="text-label-md font-bold text-on-surface leading-tight truncate">{asgn.title}</h4>
+                  <p className="text-[11px] text-[#737686] mt-0.5">
+                    Deadline: {asgn.date} ({getRelativeDaysLabel(asgn.date)})
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase">Status:</span>
+                  <select 
+                    value={asgn.status || 'Not Started'} 
+                    onChange={(e) => onUpdateStatus(asgn.id, e.target.value)}
+                    className="px-2.5 py-1 bg-surface border border-[#E2E8F0] rounded-md text-label-md font-semibold text-on-surface focus:outline-none focus:border-primary cursor-pointer transition-colors"
+                  >
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Submitted">Submitted</option>
+                  </select>
+                  {isSubmitted ? (
+                    <CheckCheck className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-slate-300" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Tests & Exams Tab Content ────────────────────────────────
+const TestsExamsTab = ({ subject, events, onUpdateStatus }) => {
+  const subjectExams = events.filter(
+    e => e.subjectId === subject.id && (e.type === 'Test' || e.type === 'Exam')
+  );
+
+  return (
+    <div className="flex flex-col gap-4 max-w-4xl">
+      <p className="text-body-md text-[#737686]">{subjectExams.length} tests and exams listed</p>
+      
+      {subjectExams.length === 0 ? (
+        <div className="bg-white border border-[#E2E8F0] rounded-lg p-12 text-center text-body-md text-[#737686] italic shadow-ambient">
+          No tests or exams scheduled.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {subjectExams.map(exam => {
+            const isCompleted = exam.status === 'Completed' || exam.status === 'Submitted';
+            return (
+              <div 
+                key={exam.id} 
+                className="bg-white border border-[#E2E8F0] rounded-lg shadow-ambient p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <h4 className="text-label-md font-bold text-on-surface leading-tight truncate">{exam.title}</h4>
+                  <p className="text-[11px] text-[#737686] mt-0.5">
+                    Date: {exam.date} • Type: {exam.type}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase">Status:</span>
+                  <select 
+                    value={exam.status || 'Not Started'} 
+                    onChange={(e) => onUpdateStatus(exam.id, e.target.value)}
+                    className="px-2.5 py-1 bg-surface border border-[#E2E8F0] rounded-md text-label-md font-semibold text-on-surface focus:outline-none focus:border-primary cursor-pointer transition-colors"
+                  >
+                    <option value="Not Started">Upcoming</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                  {isCompleted ? (
+                    <CheckCheck className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-slate-300" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main SubjectDetailView Component ───────────────────────
+const SubjectDetailView = ({ subject, events, resources, onBack, onUpdateEventStatus }) => {
+  const [activeTab, setActiveTab] = useState('Overview')
+
+  if (!subject) {
+    return (
+      <div className="py-20 text-center text-on-surface-variant font-medium">
+        No subject selected. Click back to select a subject.
         {onBack && (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-label-md font-semibold text-[#737686] hover:text-on-surface transition-colors cursor-pointer mb-4 w-fit"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Subjects
+          <button onClick={onBack} className="block mx-auto mt-4 px-4 py-2 bg-primary text-white rounded-md">
+            Go back
           </button>
         )}
-
-        {/* ── Page Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mb-6">
-          <div className="flex flex-col gap-2">
-            {/* Code badge + semester */}
-            <div className="flex items-center gap-3">
-              <span className="text-label-sm font-extrabold uppercase px-2.5 py-1 rounded-sm bg-[#eeefff] text-primary">
-                {subject.code}
-              </span>
-              <span className="text-body-md text-[#737686] font-medium">Semester {subject.semester}</span>
-            </div>
-            {/* Title */}
-            <h1 className="text-display text-on-surface">{subject.title}</h1>
-            {/* Meta row */}
-            <div className="flex flex-wrap items-center gap-4 text-body-md text-[#737686]">
-              <span className="flex items-center gap-1.5">
-                <User         className="w-3.5 h-3.5 shrink-0" /> {subject.instructor}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <BookOpen     className="w-3.5 h-3.5 shrink-0" /> {subject.credits} Credits
-              </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck  className="w-3.5 h-3.5 shrink-0" /> {subject.type}
-              </span>
-            </div>
-          </div>
-
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#004ac6] hover:bg-[#003ea8] active:scale-[0.98] text-white rounded-md text-label-md font-semibold shadow-sm transition-all cursor-pointer">
-              <Play className="w-4 h-4 fill-current" />
-              Resume Learning
-            </button>
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#E2E8F0] hover:bg-surface-container text-on-surface rounded-md text-label-md font-semibold shadow-ambient transition-colors cursor-pointer">
-              <Settings className="w-4 h-4" />
-              Course Settings
-            </button>
-          </div>
-        </div>
-
-        {/* ── Tab Navigation ── */}
-        <div className="border-b border-[#E2E8F0] mb-6 overflow-x-auto no-scrollbar">
-          <div className="flex gap-0 min-w-max">
-            {TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 text-label-md font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-[#737686] hover:text-on-surface hover:border-[#c3c6d7]'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Tab Content ── */}
-        {activeTab === 'Overview'      && <OverviewTab  subject={subject} />}
-        {activeTab === 'Lectures'      && <LecturesTab  subject={subject} />}
-        {activeTab === 'Assignments'   && <PlaceholderTab label="Assignments" />}
-        {activeTab === 'Tests & Exams' && <PlaceholderTab label="Tests & Exams" />}
-        {activeTab === 'Materials'     && <PlaceholderTab label="Materials" />}
-        {activeTab === 'Grades'        && <PlaceholderTab label="Grades" />}
-
       </div>
-      {/* ============================================ */}
-      {/* END: Subject Detail Section                  */}
-      {/* ============================================ */}
-    </>
+    );
+  }
+
+  return (
+    <div className="w-full flex flex-col gap-0 font-inter pb-16">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-label-md font-semibold text-[#737686] hover:text-on-surface transition-colors cursor-pointer mb-4 w-fit bg-transparent border-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Subjects
+        </button>
+      )}
+
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mb-6">
+        <div className="flex flex-col gap-2">
+          {/* Code badge + semester */}
+          <div className="flex items-center gap-3">
+            <span className="text-label-sm font-extrabold uppercase px-2.5 py-1 rounded-sm bg-[#eeefff] text-primary">
+              {subject.code}
+            </span>
+            <span className="text-body-md text-[#737686] font-medium">{subject.semester} Semester</span>
+          </div>
+          {/* Title */}
+          <h1 className="text-display text-on-surface">{subject.name}</h1>
+          {/* Meta row */}
+          <div className="flex flex-wrap items-center gap-4 text-body-md text-[#737686]">
+            <span className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 shrink-0" /> Lecturer: {subject.lecturer}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 shrink-0" /> {subject.credits} Credits
+            </span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> {subject.isMandatory ? 'Mandatory' : 'Elective'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-[#E2E8F0] mb-6 overflow-x-auto no-scrollbar">
+        <div className="flex gap-0 min-w-max">
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-3 text-label-md font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap bg-transparent border-0 ${
+                activeTab === tab
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-[#737686] hover:text-on-surface hover:border-[#c3c6d7]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="pt-2">
+        {activeTab === 'Overview' && <OverviewTab subject={subject} events={events} />}
+        {activeTab === 'Materials' && <MaterialsTab subject={subject} resources={resources} />}
+        {activeTab === 'Assignments' && <AssignmentsTab subject={subject} events={events} onUpdateStatus={onUpdateEventStatus} />}
+        {activeTab === 'Tests & Exams' && <TestsExamsTab subject={subject} events={events} onUpdateStatus={onUpdateEventStatus} />}
+      </div>
+    </div>
   )
 }
 

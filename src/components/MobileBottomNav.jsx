@@ -1,4 +1,3 @@
-import React from 'react'
 import { LayoutGrid, BookOpen, Calendar, Library } from 'lucide-react'
 
 const MobileBottomNav = ({ activeTab, setActiveTab }) => {
