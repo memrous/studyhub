@@ -2,7 +2,7 @@ import { React, useState } from 'react'
 import { INITIAL_USER } from '../data/mockData'
 import { Search, Bell, Settings } from 'lucide-react'
 
-const Header = () => {
+const Header = ( { setActiveTab } ) => {
     
     const [user] = useState(INITIAL_USER)
 
@@ -19,6 +19,7 @@ const Header = () => {
       </div>
 
       {/* Quick Actions & User Info */}
+
       <div className="flex items-center gap-5">
         {/* <button className="text-on-surface-variant hover:text-on-surface transition-colors relative">
           <Bell className="w-5 h-5" />
@@ -28,15 +29,22 @@ const Header = () => {
           <Settings className="w-5 h-5" />
         </button> */}
         <div className="border-l border-[#E2E8F0] h-6"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
-          alt="Alex Johnson" 
-          className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0] cursor-pointer" 
-        />
-        <span className="text-body-md text-on-surface">{user.name}</span>
+        
+        {/* Klikací sekce profilu */}
+        <div 
+          onClick={() => setActiveTab('profile')} 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
+            alt={user.name} 
+            className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0]" 
+          />
+          <span className="text-body-md text-on-surface">{user.name}</span>
+        </div>
       </div>
-    </header>
-  )
-}
+          </header>
+        )
+      }
 
 export default Header

@@ -76,14 +76,14 @@ const Profile = ({ user }) => {
         </div>
 
         {/* STAG Connection Status */}
-        <div className="border-t border-[#E2E8F0] pt-6 flex items-center justify-between bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 mt-2">
-          <div className="flex items-center gap-3">
+        <div className="border-t border-[#E2E8F0] pt-6 flex flex-col items-center sm:flex-row sm:gap-0 gap-3 justify-between bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 mt-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <div className="w-10 h-10 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
+            <div className="text-center sm:text-left">
               <h4 className="text-label-md font-bold text-emerald-950 leading-tight">STAG System Connection</h4>
-              <p className="text-body-sm text-emerald-800 mt-0.5">Grades, deadlines, and schedule courses are fully connected.</p>
+              <p className="text-sm sm:text-[18px] text-body-sm text-emerald-800 mt-0.5">Grades, deadlines, and schedule courses are fully connected.</p>
             </div>
           </div>
           <span className="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-sm shadow-sm">

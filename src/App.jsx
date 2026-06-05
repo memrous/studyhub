@@ -39,6 +39,7 @@ const App = () => {
     if (typeof window === 'undefined') return 'dashboard'
     return window.localStorage.getItem('studyhub-activeTab') || 'dashboard'
   })
+
   
   // Unified client-side database states
   const [user] = useState(INITIAL_USER)
@@ -154,7 +155,7 @@ const App = () => {
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} />
         
         <div className="flex-1 flex flex-col min-w-0">
-          <Header setActiveTab={setActiveTab} />
+          <Header user={user} setActiveTab={setActiveTab} />
           
           <main className="flex-1 overflow-y-auto bg-white p-8">
             <div className="max-w-[1600px] w-full mx-auto flex flex-col gap-6">
@@ -350,6 +351,8 @@ const App = () => {
               onEditEvent={handleEditEvent}
               onDeleteEvent={handleDeleteEvent}
               onOpenSubject={(subjectId) => { setSelectedSubjectId(subjectId); setActiveTab('subject-detail') }}
+              openEventId={calendarOpenEventId}
+              onCloseOpenEvent={clearCalendarOpenEvent}
             />
           ) : activeTab === 'subjects' ? (
             <SubjectsView 
