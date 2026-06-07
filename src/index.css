@@ -126,4 +126,10 @@
     font-size: 13px;
     line-height: 18px;
   }
+  .text-label-md{
+    font-size: 12px;
+  }
+  .text-label-sm{
+    font-size: 10px;
+  }
 }

@@ -183,7 +183,10 @@ const App = () => {
                     
                     {/* Left Columns (Subjects & Timetable) */}
                     <div className="col-span-2 flex flex-col gap-6">
-                      
+
+                      {/* Timetable Section */}
+                      <Timetable events={events} subjects={subjects} />
+
                       {/* Subjects Section */}
                       <section className="flex flex-col gap-4">
                         <div className="flex justify-between items-center">
@@ -209,9 +212,6 @@ const App = () => {
                           ))}
                         </div>
                       </section>
-
-                      {/* Timetable Section */}
-                      <Timetable events={events} subjects={subjects} />
                     </div>
 
                     {/* Right Column (Deadlines & Recent Materials) */}
@@ -295,6 +295,9 @@ const App = () => {
               {/* Stats Cards Swipe Row */}
               <MobileStats subjects={subjects} events={events} />
 
+              {/* Mobile Today's Schedule */}
+              <MobileTodaySchedule events={events} subjects={subjects} />
+
               {/* Mobile Subjects List */}
               <section className="flex flex-col gap-3">
                 <div className="flex justify-between items-center">
@@ -336,9 +339,6 @@ const App = () => {
 
               {/* Mobile Urgent Deadlines */}
               <MobileUrgentDeadlines events={events} subjects={subjects} onDeadlineClick={handleOpenCalendarEvent} />
-
-              {/* Mobile Today's Schedule */}
-              <MobileTodaySchedule events={events} subjects={subjects} />
 
               {/* Mobile Recent Materials */}
               <MobileRecentMaterials resources={resources} subjects={subjects} />
