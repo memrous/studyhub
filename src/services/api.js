@@ -2,30 +2,56 @@
  * src/services/api.js
  *
  * Mock API service layer.
- *
- * All functions return Promises that simulate a ~600 ms network round-trip.
- * The entire function body of each export can later be replaced with a real
- * fetch/axios call to the Laravel backend without touching any UI component.
- *
- * Laravel Sanctum swap example:
- *   export const login = async (email, password) => {
- *     await fetch('/sanctum/csrf-cookie')
- *     const res = await fetch('/api/login', {
- *       method: 'POST',
- *       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
- *       body: JSON.stringify({ email, password }),
- *       credentials: 'include',
- *     })
- *     if (!res.ok) throw new Error((await res.json()).message ?? 'Login failed')
- *     return res.json()   // { user: {...} }
- *   }
+ * All backend calls are managed here, ready to be routed to the HTTP client
+ * when integrating the Laravel backend.
  */
 
-const MOCK_DELAY = 600 // ms
+import httpClient from './httpClient'
+import {
+  INITIAL_SUBJECTS,
+  INITIAL_EVENTS,
+  INITIAL_RESOURCES,
+} from '../data/mockData'
 
+const MOCK_DELAY = 600 // ms
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// ── Mock credentials ────────────────────────────────────────────
+const success = (data) => ({ data, error: null, status: 'success' })
+const failure = (error) => ({ data: null, error, status: 'error' })
+
+const dispatchUnauthorized = () => {
+  window.dispatchEvent(new Event('studyhub:unauthorized'))
+}
+
+const isNetworkError = (error) => !error.response
+
+const normalizeHttpError = (error) => {
+  if (error?.response?.status === 401) {
+    dispatchUnauthorized()
+    return failure('unauthorized')
+  }
+
+  if (isNetworkError(error)) {
+    return failure('network_error')
+  }
+
+  if (error?.response?.status === 500) {
+    return failure('server_error')
+  }
+
+  return failure(error?.response?.data?.message || error?.message || 'unknown_error')
+}
+
+const request = async (handler) => {
+  try {
+    const data = await handler()
+    return success(data)
+  } catch (error) {
+    return normalizeHttpError(error)
+  }
+}
+
+// In-memory store for mock registered accounts (session-scoped)
 const MOCK_USER_DB = [
   {
     id: 1,
@@ -38,22 +64,31 @@ const MOCK_USER_DB = [
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
   },
 ]
-
-// In-memory store for mock-registered accounts (session-scoped)
 const mockRegisteredUsers = [...MOCK_USER_DB]
 
-// ── Helpers ─────────────────────────────────────────────────────
 const sanitizeUser = ({ password: _pw, ...user }) => user
 
-// ── API functions ────────────────────────────────────────────────
+// ── Namespacing Helpers ──────────────────────────────────────────
 
 /**
- * Simulate POST /api/login
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{ user: object, token: string }>}
+ * Returns namespaced key for localStorage.
+ * Format: studyhub:${userId}:${key}
  */
+const getNamespacedKey = (userId, key) => {
+  const scope = userId || 'fallback'
+  return `studyhub:${scope}:${key}`
+}
+
+// Toggle this for real Laravel backend integration in the future
+const USE_REAL_BACKEND = false
+
+// ── Auth API Functions ───────────────────────────────────────────
+
 export const login = async (email, password) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.post('/login', { email, password }).then((res) => res.data))
+  }
+
   await delay(MOCK_DELAY)
 
   const found = mockRegisteredUsers.find(
@@ -61,23 +96,18 @@ export const login = async (email, password) => {
   )
 
   if (!found) {
-    throw new Error('Invalid email or password. Please try again.')
+    return failure('invalid_credentials')
   }
 
-  // Simulate a token (Laravel would return a real Sanctum token here)
   const token = `mock-token-${found.id}-${Date.now()}`
-
-  return { user: sanitizeUser(found), token }
+  return success({ user: sanitizeUser(found), token })
 }
 
-/**
- * Simulate POST /api/register
- * @param {string} name
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{ user: object, token: string }>}
- */
 export const register = async (name, email, password) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.post('/register', { name, email, password }).then((res) => res.data))
+  }
+
   await delay(MOCK_DELAY)
 
   const existing = mockRegisteredUsers.find(
@@ -85,7 +115,7 @@ export const register = async (name, email, password) => {
   )
 
   if (existing) {
-    throw new Error('An account with this email already exists.')
+    return failure('email_exists')
   }
 
   const newUser = {
@@ -100,39 +130,136 @@ export const register = async (name, email, password) => {
   }
 
   mockRegisteredUsers.push(newUser)
-
   const token = `mock-token-${newUser.id}-${Date.now()}`
-
-  return { user: sanitizeUser(newUser), token }
+  return success({ user: sanitizeUser(newUser), token })
 }
 
-/**
- * Simulate POST /api/logout
- * @returns {Promise<void>}
- */
-export const logout = async () => {
+export const logout = async (userId) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.post('/logout').then((res) => res.data))
+  }
+
   await delay(200)
-  // Laravel would invalidate the Sanctum token here
+
+  // Clear current user's namespace data on logout as requested
+  if (userId) {
+    localStorage.removeItem(getNamespacedKey(userId, 'subjects'))
+    localStorage.removeItem(getNamespacedKey(userId, 'events'))
+    localStorage.removeItem(getNamespacedKey(userId, 'materials'))
+  }
+
+  return success(null)
 }
 
-/**
- * Simulate GET /api/user
- * Used to validate a stored token and restore the session.
- * @param {string} token
- * @returns {Promise<{ user: object }>}
- */
 export const getUser = async (token) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.get('/user').then((res) => res.data))
+  }
+
   await delay(300)
 
-  // In the mock, we embed the user id in the token string
   const parts = token.split('-')
   const userId = parseInt(parts[2], 10)
 
   const found = mockRegisteredUsers.find((u) => u.id === userId)
-
   if (!found) {
-    throw new Error('Session expired. Please log in again.')
+    return failure('unauthorized')
   }
 
-  return { user: sanitizeUser(found) }
+  return success({ user: sanitizeUser(found) })
+}
+
+// ── Application State API Functions ──────────────────────────────
+
+export const getSubjects = async (userId) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.get('/subjects').then((res) => res.data))
+  }
+
+  await delay(MOCK_DELAY)
+  const key = getNamespacedKey(userId, 'subjects')
+  const saved = localStorage.getItem(key)
+  if (saved) {
+    try {
+      return success(JSON.parse(saved))
+    } catch {
+      return success(INITIAL_SUBJECTS)
+    }
+  }
+  // Initialize namespaced storage with default mock data
+  localStorage.setItem(key, JSON.stringify(INITIAL_SUBJECTS))
+  return success(INITIAL_SUBJECTS)
+}
+
+export const saveSubjects = async (userId, subjects) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.put('/subjects', { subjects }).then((res) => res.data))
+  }
+
+  await delay(100)
+  const key = getNamespacedKey(userId, 'subjects')
+  localStorage.setItem(key, JSON.stringify(subjects))
+  return success(null)
+}
+
+export const getEvents = async (userId) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.get('/events').then((res) => res.data))
+  }
+
+  await delay(MOCK_DELAY)
+  const key = getNamespacedKey(userId, 'events')
+  const saved = localStorage.getItem(key)
+  if (saved) {
+    try {
+      return success(JSON.parse(saved))
+    } catch {
+      return success(INITIAL_EVENTS)
+    }
+  }
+  // Initialize namespaced storage with default mock data
+  localStorage.setItem(key, JSON.stringify(INITIAL_EVENTS))
+  return success(INITIAL_EVENTS)
+}
+
+export const saveEvents = async (userId, events) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.put('/events', { events }).then((res) => res.data))
+  }
+
+  await delay(100)
+  const key = getNamespacedKey(userId, 'events')
+  localStorage.setItem(key, JSON.stringify(events))
+  return success(null)
+}
+
+export const getResources = async (userId) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.get('/materials').then((res) => res.data))
+  }
+
+  await delay(MOCK_DELAY)
+  const key = getNamespacedKey(userId, 'materials')
+  const saved = localStorage.getItem(key)
+  if (saved) {
+    try {
+      return success(JSON.parse(saved))
+    } catch {
+      return success(INITIAL_RESOURCES)
+    }
+  }
+  // Initialize namespaced storage with default mock data
+  localStorage.setItem(key, JSON.stringify(INITIAL_RESOURCES))
+  return success(INITIAL_RESOURCES)
+}
+
+export const saveResources = async (userId, resources) => {
+  if (USE_REAL_BACKEND) {
+    return request(() => httpClient.put('/materials', { resources }).then((res) => res.data))
+  }
+
+  await delay(100)
+  const key = getNamespacedKey(userId, 'materials')
+  localStorage.setItem(key, JSON.stringify(resources))
+  return success(null)
 }

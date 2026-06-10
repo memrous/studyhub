@@ -2,9 +2,9 @@ import { useAuth } from '../context/AuthContext'
 import Profile from '../components/Profile'
 
 const ProfilePage = () => {
-  const { authUser } = useAuth()
+  const { user } = useAuth()
 
-  return <Profile user={authUser} />
+  return <Profile user={user} />
 }
 
 export default ProfilePage

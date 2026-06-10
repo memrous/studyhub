@@ -6,60 +6,83 @@ import * as api from '../services/api'
  * AuthContext
  *
  * Central authentication state for the entire application.
- *
- * Exposed via useAuth():
- *   authUser        — authenticated user object | null
- *   isAuthenticated — boolean shorthand
- *   isLoading       — true while restoring session from localStorage on mount
- *   login()         — authenticate with email + password
- *   register()      — create account and log in
- *   logout()        — clear session and redirect to /login
- *
- * localStorage keys:
- *   studyhub-auth-token — persisted API token
- *   studyhub-auth-user  — persisted user object (avoids a getUser() round-trip)
- *
- * Future: when moving to Laravel Sanctum/JWT, replace api.* calls only.
- * Role-based access: add authUser.role checks wherever needed.
+ * Exposes useAuth() user state as the single source of truth.
  */
 
 const AuthContext = createContext(null)
+const LS_AUTH = 'studyhub:auth'
 
-const LS_TOKEN = 'studyhub-auth-token'
-const LS_USER  = 'studyhub-auth-user'
+const getAuthErrorMessage = (error) => {
+  switch (error) {
+    case 'invalid_credentials':
+      return 'Invalid email or password. Please try again.'
+    case 'email_exists':
+      return 'An account with this email already exists.'
+    case 'network_error':
+      return 'Network error. Please try again.'
+    case 'server_error':
+      return 'Server error. Please try again.'
+    case 'unauthorized':
+      return 'Session expired. Please log in again.'
+    default:
+      return 'Something went wrong. Please try again.'
+  }
+}
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate()
 
-  const [authUser,   setAuthUser]   = useState(null)
-  const [isLoading,  setIsLoading]  = useState(true)   // true until session restore completes
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // ── Session restore on mount ──────────────────────────────────
   useEffect(() => {
     const restoreSession = async () => {
-      const token     = localStorage.getItem(LS_TOKEN)
-      const cachedUser = localStorage.getItem(LS_USER)
+      const authDataStr = localStorage.getItem(LS_AUTH)
 
-      if (!token) {
+      if (!authDataStr) {
         setIsLoading(false)
         return
       }
 
       try {
-        // Use cached user for instant UI, then validate token in background
-        if (cachedUser) {
-          setAuthUser(JSON.parse(cachedUser))
+        const { token, user: cachedUser } = JSON.parse(authDataStr)
+        if (!token) {
           setIsLoading(false)
+          return
         }
 
-        const { user } = await api.getUser(token)
-        setAuthUser(user)
-        localStorage.setItem(LS_USER, JSON.stringify(user))
+        // Use cached user for instant UI, then validate token in background
+        if (cachedUser) {
+          setUser(cachedUser)
+        }
+
+        const response = await api.getUser(token)
+
+        if (response.status === 'success') {
+          const { user: refreshedUser } = response.data
+          setUser(refreshedUser)
+          localStorage.setItem(LS_AUTH, JSON.stringify({ token, user: refreshedUser }))
+          return
+        }
+
+        if (response.error === 'unauthorized') {
+          await logout()
+          return
+        }
+
+        if (cachedUser) {
+          localStorage.setItem(LS_AUTH, JSON.stringify({ token, user: cachedUser }))
+          setUser(cachedUser)
+          return
+        }
+
+        localStorage.removeItem(LS_AUTH)
+        setUser(null)
       } catch {
         // Token invalid or expired — clear session silently
-        localStorage.removeItem(LS_TOKEN)
-        localStorage.removeItem(LS_USER)
-        setAuthUser(null)
+        localStorage.removeItem(LS_AUTH)
+        setUser(null)
       } finally {
         setIsLoading(false)
       }
@@ -69,58 +92,77 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   // ── Persist helpers ───────────────────────────────────────────
-  const persistSession = (user, token) => {
-    localStorage.setItem(LS_TOKEN, token)
-    localStorage.setItem(LS_USER,  JSON.stringify(user))
-    setAuthUser(user)
-  }
+  const persistSession = useCallback((userData, token) => {
+    localStorage.setItem(LS_AUTH, JSON.stringify({ token, user: userData }))
+    setUser(userData)
+  }, [])
 
-  const clearSession = () => {
-    localStorage.removeItem(LS_TOKEN)
-    localStorage.removeItem(LS_USER)
-    setAuthUser(null)
-  }
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(LS_AUTH)
+    setUser(null)
+  }, [])
+
+  const getStoredUserId = useCallback(() => {
+    const authDataStr = localStorage.getItem(LS_AUTH)
+    if (!authDataStr) {
+      return user?.id
+    }
+
+    try {
+      const parsed = JSON.parse(authDataStr)
+      return parsed.user?.id || user?.id
+    } catch {
+      return user?.id
+    }
+  }, [user])
 
   // ── Auth actions ──────────────────────────────────────────────
 
-  /**
-   * @param {string} email
-   * @param {string} password
-   * @throws {Error} with user-friendly message on failure
-   */
   const login = useCallback(async (email, password) => {
-    const { user, token } = await api.login(email, password)
-    persistSession(user, token)
-    navigate('/dashboard', { replace: true })
-  }, [navigate])
+    const response = await api.login(email, password)
+    if (response.status === 'error') {
+      throw new Error(getAuthErrorMessage(response.error))
+    }
 
-  /**
-   * @param {string} name
-   * @param {string} email
-   * @param {string} password
-   * @throws {Error} with user-friendly message on failure
-   */
+    const { user: userData, token } = response.data
+    persistSession(userData, token)
+    navigate('/dashboard', { replace: true })
+  }, [navigate, persistSession])
+
   const register = useCallback(async (name, email, password) => {
-    const { user, token } = await api.register(name, email, password)
-    persistSession(user, token)
-    navigate('/dashboard', { replace: true })
-  }, [navigate])
+    const response = await api.register(name, email, password)
+    if (response.status === 'error') {
+      throw new Error(getAuthErrorMessage(response.error))
+    }
 
-  /**
-   * Clears the session and redirects to /login.
-   */
+    const { user: userData, token } = response.data
+    persistSession(userData, token)
+    navigate('/dashboard', { replace: true })
+  }, [navigate, persistSession])
+
   const logout = useCallback(async () => {
     try {
-      await api.logout()
+      await api.logout(getStoredUserId())
     } finally {
       clearSession()
       navigate('/login', { replace: true })
     }
-  }, [navigate])
+  }, [navigate, clearSession, getStoredUserId])
+
+  // ── Listen for 401 Unauthorized events from httpClient ───────
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout()
+    }
+    window.addEventListener('studyhub:unauthorized', handleUnauthorized)
+    return () => {
+      window.removeEventListener('studyhub:unauthorized', handleUnauthorized)
+    }
+  }, [logout])
 
   const value = {
-    authUser,
-    isAuthenticated: !!authUser,
+    user,
+    isAuthenticated: !!user,
     isLoading,
     login,
     register,

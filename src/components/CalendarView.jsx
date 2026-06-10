@@ -12,8 +12,7 @@ import {
   AlertCircle 
 } from 'lucide-react'
 
-// Import tvých sjednocených mock dat
-import { INITIAL_EVENTS, INITIAL_SUBJECTS } from '../data/mockData'
+// Mock data import removed. Data now flows exclusively from Context.
 
 // Mapování designových barev podle TYPU události
 const TYPE_COLOR_MAP = {
@@ -38,9 +37,8 @@ const CalendarView = ({
   onCloseOpenEvent     
 }) => {
   
-  // Použijeme prioritně data z props, jinak záložní z mocků
-  const currentEvents = propEvents || INITIAL_EVENTS
-  const currentSubjects = propSubjects || INITIAL_SUBJECTS
+  const currentEvents = propEvents || []
+  const currentSubjects = propSubjects || []
 
   // Seznam předmětů pro filtry
   const SUBJECTS = useMemo(() => {

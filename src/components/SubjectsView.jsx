@@ -248,8 +248,14 @@ const SubjectsView = ({ subjects, onSelectSubject, onAddSubject }) => {
             <div className="w-12 h-12 bg-[#eeefff] text-primary rounded-full flex items-center justify-center">
               <BookOpen className="w-6 h-6" />
             </div>
-            <p className="text-headline-md font-semibold text-on-surface">No subjects found</p>
-            <p className="text-body-md text-[#737686]">Try changing the filter or add a new subject.</p>
+            <p className="text-headline-md font-semibold text-on-surface">
+              {subjects.length === 0 ? 'Žádná data' : 'Žádné odpovídající předměty'}
+            </p>
+            <p className="text-body-md text-[#737686]">
+              {subjects.length === 0
+                ? 'Zatím nemáte žádné zapsané předměty.'
+                : 'Zkuste změnit filtr nebo přidat nový předmět.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">

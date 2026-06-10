@@ -6,6 +6,7 @@ import { useAuth } from './context/AuthContext'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import { Loader2 } from 'lucide-react'
+import NotFoundPage from './pages/NotFoundPage'
 
 // ── Lazy-loaded page components ────────────────────────────────
 const DashboardPage     = lazy(() => import('./pages/DashboardPage'))
@@ -69,8 +70,8 @@ const AppRoutes = () => (
         </Route>
       </Route>
 
-      {/* Catch-all: redirect unknown paths to dashboard */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Catch-all: render a dedicated 404 page */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
 )

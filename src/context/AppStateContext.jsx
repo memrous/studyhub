@@ -1,56 +1,128 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import {
-  INITIAL_USER,
-  INITIAL_SUBJECTS,
-  INITIAL_EVENTS,
-  INITIAL_RESOURCES,
-  getRelativeDate,
-} from '../data/mockData'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useAuth } from './AuthContext'
+import * as api from '../services/api'
 
 const AppStateContext = createContext(null)
 
+const getAppErrorMessage = (error) => {
+  switch (error) {
+    case 'network_error':
+      return 'Síťové připojení se nezdařilo.'
+    case 'server_error':
+      return 'Server je momentálně nedostupný.'
+    case 'unauthorized':
+      return 'Platnost relace vypršela.'
+    default:
+      return 'Nepodařilo se načíst data.'
+  }
+}
+
 export const AppStateProvider = ({ children }) => {
-  const [user] = useState(INITIAL_USER)
+  const { user } = useAuth()
 
-  const [subjects, setSubjects] = useState(() => {
-    try {
-      const saved = localStorage.getItem('studyhub-subjects')
-      return saved ? JSON.parse(saved) : INITIAL_SUBJECTS
-    } catch {
-      return INITIAL_SUBJECTS
+  const [subjects, setSubjects] = useState([])
+  const [events, setEvents] = useState([])
+  const [resources, setResources] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  const loadUserData = useCallback(async () => {
+    if (!user) {
+      setSubjects([])
+      setEvents([])
+      setResources([])
+      setIsLoading(false)
+      setError(null)
+      setIsInitialized(false)
+      return
     }
-  })
 
-  const [events, setEvents] = useState(() => {
+    setIsLoading(true)
+    setError(null)
+
     try {
-      const saved = localStorage.getItem('studyhub-events')
-      return saved ? JSON.parse(saved) : INITIAL_EVENTS
-    } catch {
-      return INITIAL_EVENTS
+      const [subjectsResult, eventsResult, resourcesResult] = await Promise.all([
+        api.getSubjects(user.id),
+        api.getEvents(user.id),
+        api.getResources(user.id),
+      ])
+
+      const firstError = [subjectsResult, eventsResult, resourcesResult].find(
+        (result) => result.status === 'error'
+      )
+
+      if (firstError) {
+        console.error('Failed to load user data:', firstError.error)
+        setSubjects([])
+        setEvents([])
+        setResources([])
+        setError(getAppErrorMessage(firstError.error))
+        setIsInitialized(false)
+        return
+      }
+
+      const readCollection = (result, key) => {
+        if (Array.isArray(result.data)) {
+          return result.data
+        }
+        if (result.data && Array.isArray(result.data[key])) {
+          return result.data[key]
+        }
+        return []
+      }
+
+      setSubjects(readCollection(subjectsResult, 'subjects'))
+      setEvents(readCollection(eventsResult, 'events'))
+      setResources(readCollection(resourcesResult, 'resources'))
+      setIsInitialized(true)
+    } catch (err) {
+      console.error('Failed to load user data:', err)
+      setSubjects([])
+      setEvents([])
+      setResources([])
+      setError(err.message || 'Nepodařilo se načíst data.')
+      setIsInitialized(false)
+    } finally {
+      setIsLoading(false)
     }
-  })
+  }, [user])
 
-  const [resources, setResources] = useState(() => {
-    try {
-      const saved = localStorage.getItem('studyhub-resources')
-      return saved ? JSON.parse(saved) : INITIAL_RESOURCES
-    } catch {
-      return INITIAL_RESOURCES
+  // Asynchronously load user data when user changes
+  useEffect(() => {
+    loadUserData()
+  }, [loadUserData])
+
+  // Sync data updates back to local storage via the API layer
+  useEffect(() => {
+    if (user && isInitialized) {
+      api.saveSubjects(user.id, subjects).then((result) => {
+        if (result.status === 'error') {
+          console.error('Failed to save subjects:', result.error)
+        }
+      })
     }
-  })
-
-  // Persist to localStorage
-  useEffect(() => {
-    localStorage.setItem('studyhub-subjects', JSON.stringify(subjects))
-  }, [subjects])
+  }, [subjects, user, isInitialized])
 
   useEffect(() => {
-    localStorage.setItem('studyhub-events', JSON.stringify(events))
-  }, [events])
+    if (user && isInitialized) {
+      api.saveEvents(user.id, events).then((result) => {
+        if (result.status === 'error') {
+          console.error('Failed to save events:', result.error)
+        }
+      })
+    }
+  }, [events, user, isInitialized])
 
   useEffect(() => {
-    localStorage.setItem('studyhub-resources', JSON.stringify(resources))
-  }, [resources])
+    if (user && isInitialized) {
+      api.saveResources(user.id, resources).then((result) => {
+        if (result.status === 'error') {
+          console.error('Failed to save resources:', result.error)
+        }
+      })
+    }
+  }, [resources, user, isInitialized])
 
   // ── CRUD handlers ──────────────────────────────────────────
   const handleAddSubject = (newSubject) =>
@@ -75,19 +147,26 @@ export const AppStateProvider = ({ children }) => {
       prev.map((e) => (e.id === eventId ? { ...e, status } : e))
     )
 
-  // ── Derived helpers ────────────────────────────────────────
-  const todayStr = getRelativeDate(0)
+  // Calculate todayStr (YYYY-MM-DD)
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  const todayStr = `${yyyy}-${mm}-${dd}`
+
   const todayDeadlinesCount = events.filter(
     (e) => e.date === todayStr && e.type !== 'Lecture'
   ).length
 
   const value = {
-    user,
     subjects,
     events,
     resources,
+    isLoading,
+    error,
     todayStr,
     todayDeadlinesCount,
+    reloadData: loadUserData,
     handleAddSubject,
     handleCreateEvent,
     handleEditEvent,

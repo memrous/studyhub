@@ -1,16 +1,9 @@
 import { GraduationCap, ShieldCheck, Mail } from 'lucide-react'
 
 const Profile = ({ user }) => {
-  // If no user prop is passed, fallback to default Bořek Šarman
-  const student = user || {
-    name: "Bořek Šarman",
-    email: "borek.sarman@upol.cz",
-    university: "Palacký University Olomouc",
-    faculty: "Faculty of Science",
-    program: "Applied Informatics",
-    year: "1st Year",
-    stagConnected: true
-  };
+  if (!user) {
+    return <div className="p-8 text-center text-body-lg text-outline font-semibold">Loading...</div>
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 font-inter text-on-surface">
@@ -18,7 +11,7 @@ const Profile = ({ user }) => {
       <section className="bg-white border border-[#E2E8F0] shadow-ambient rounded-xl p-6 md:p-8 flex flex-col sm:flex-row items-center gap-6">
         <div className="relative">
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+            src={user.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
             alt="Student Avatar"
             className="w-24 h-24 rounded-lg object-cover border border-[#E2E8F0] shadow-sm"
           />
@@ -32,11 +25,11 @@ const Profile = ({ user }) => {
             Institutional Student Account
           </p>
           <h1 className="text-display text-on-surface mt-1 leading-tight">
-            {student.name}
+            {user.name}
           </h1>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-body-md text-[#737686]">
             <span className="flex items-center gap-1.5">
-              <Mail className="w-4 h-4 text-slate-400" /> {student.email}
+              <Mail className="w-4 h-4 text-slate-400" /> {user.email}
             </span>
           </div>
         </div>
@@ -53,25 +46,25 @@ const Profile = ({ user }) => {
           {/* University */}
           <div className="rounded-lg bg-[#F2F4F6] border border-[#E2E8F0]/40 p-4">
             <p className="text-label-sm text-[#737686] uppercase font-bold tracking-wider">University</p>
-            <p className="mt-2 text-headline-md font-semibold text-on-surface">{student.university || "Palacký University Olomouc"}</p>
+            <p className="mt-2 text-headline-md font-semibold text-on-surface">{user.university || "Palacký University Olomouc"}</p>
           </div>
 
           {/* Faculty */}
           <div className="rounded-lg bg-[#F2F4F6] border border-[#E2E8F0]/40 p-4">
             <p className="text-label-sm text-[#737686] uppercase font-bold tracking-wider">Faculty</p>
-            <p className="mt-2 text-headline-md font-semibold text-on-surface">{student.faculty || "Faculty of Science"}</p>
+            <p className="mt-2 text-headline-md font-semibold text-on-surface">{user.faculty || "Faculty of Science"}</p>
           </div>
 
           {/* Program */}
           <div className="rounded-lg bg-[#F2F4F6] border border-[#E2E8F0]/40 p-4">
             <p className="text-label-sm text-[#737686] uppercase font-bold tracking-wider">Study Program</p>
-            <p className="mt-2 text-headline-md font-semibold text-on-surface">{student.program || "Applied Informatics"}</p>
+            <p className="mt-2 text-headline-md font-semibold text-on-surface">{user.program || "Applied Informatics"}</p>
           </div>
 
           {/* Academic Year */}
           <div className="rounded-lg bg-[#F2F4F6] border border-[#E2E8F0]/40 p-4">
             <p className="text-label-sm text-[#737686] uppercase font-bold tracking-wider">Academic Year</p>
-            <p className="mt-2 text-headline-md font-semibold text-on-surface">{student.year || "1st Year"}</p>
+            <p className="mt-2 text-headline-md font-semibold text-on-surface">{user.year || "1st Year"}</p>
           </div>
         </div>
 

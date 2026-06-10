@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Calendar as CalendarIcon, BookOpen } from 'lucide-react'
 import { useAppState } from '../context/AppStateContext'
 import { useAuth } from '../context/AuthContext'
+import PageState from '../components/PageState'
 
 import StatsRow from '../components/StatsRow'
 import SubjectCard from '../components/SubjectCard'
@@ -17,9 +18,34 @@ import MobileRecentMaterials from '../components/MobileRecentMaterials'
 
 const DashboardPage = () => {
   const navigate = useNavigate()
-  const { authUser } = useAuth()
-  const { subjects, events, resources, todayDeadlinesCount } = useAppState()
-  const user = authUser || { name: 'Student' }
+  const { user } = useAuth()
+  const { subjects, events, resources, todayDeadlinesCount, isLoading, error, reloadData } = useAppState()
+
+  if (isLoading) {
+    return <PageState variant="loading" title="Loading..." />
+  }
+
+  if (error) {
+    return (
+      <PageState
+        variant="error"
+        title={error}
+        description="Zkuste stránku načíst znovu."
+        actionLabel="Zkusit znovu"
+        onAction={reloadData}
+      />
+    )
+  }
+
+  if (subjects.length === 0 && events.length === 0 && resources.length === 0) {
+    return (
+      <PageState
+        variant="empty"
+        title="Žádná data"
+        description="Zatím nejsou k dispozici žádné předměty, události ani materiály."
+      />
+    )
+  }
 
   const handleDeadlineClick = (eventId) => {
     navigate('/calendar', { state: { openEventId: eventId } })

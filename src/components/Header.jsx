@@ -3,8 +3,7 @@ import { Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const Header = () => {
-  const { authUser } = useAuth()
-  const user = authUser || { name: 'Student', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80' }
+  const { user } = useAuth()
 
   return (
     <header className="h-16 px-8 bg-white border-b border-[#E2E8F0] flex items-center justify-between sticky top-0 z-10 shadow-sm font-inter">

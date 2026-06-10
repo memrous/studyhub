@@ -11,8 +11,7 @@ const NAV_ITEMS = [
 ]
 
 const MobileSidebarDrawer = ({ isOpen, onClose }) => {
-  const { authUser, logout } = useAuth()
-  const user = authUser || { name: 'Student', program: 'Computer Science, Bc.' }
+  const { user, logout } = useAuth()
   const getClass = ({ isActive }) => {
     const base = 'flex items-center gap-3 px-3 py-2.5 rounded-md text-label-md transition-all cursor-pointer'
     return isActive
