@@ -4,7 +4,7 @@
  * React Query hook for the Subjects collection.
  *
  * Data flow:
- *   Component → useSubjects() → api.getSubjects() → localStorage (mock) → Laravel (future)
+ *   Component → useSubjects() → api.getSubjects() → localStorage (mock) / Laravel (real)
  *
  * Exposes:
  *   data        Subject[]   — the fetched list (defaults to [])
@@ -39,25 +39,34 @@ const extractSubjects = (result) => {
 export const useSubjects = () => {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const queryKey = [SUBJECTS_KEY, user?.id]
 
   // ── Query ──────────────────────────────────────────────────────
   const query = useQuery({
-    queryKey: [SUBJECTS_KEY, user?.id],
+    queryKey,
     queryFn: () => api.getSubjects(user.id).then(extractSubjects),
     enabled: !!user,
   })
 
   // ── Mutation: add subject ─────────────────────────────────────
   const addSubjectMutation = useMutation({
-    mutationFn: (newSubject) => {
-      // Persist the full updated list back through the API layer.
-      // The API layer will write it to localStorage (mock) or send it to
-      // the Laravel backend (when USE_REAL_BACKEND = true).
-      const current = queryClient.getQueryData([SUBJECTS_KEY, user?.id]) ?? []
-      return api.saveSubjects(user.id, [...current, newSubject])
+    mutationFn: (newSubject) => api.createSubject(user.id, newSubject).then(res => {
+      if (res.status === 'error') throw new Error(res.error)
+      return res.data
+    }),
+    onMutate: async (newSubject) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousSubjects = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (old) => [...(old ?? []), newSubject])
+      return { previousSubjects }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [SUBJECTS_KEY, user?.id] })
+    onError: (err, newSubject, context) => {
+      if (context?.previousSubjects) {
+        queryClient.setQueryData(queryKey, context.previousSubjects)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 

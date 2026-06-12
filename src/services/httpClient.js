@@ -17,6 +17,10 @@ const httpClient = axios.create({
   },
 })
 
+// For Sanctum: uncomment below and remove the Bearer token interceptor
+// httpClient.defaults.withCredentials = true
+// Before login call: await httpClient.get('/sanctum/csrf-cookie')
+
 // Request interceptor: Attach token from localStorage
 httpClient.interceptors.request.use(
   (config) => {

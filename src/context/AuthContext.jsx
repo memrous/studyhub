@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as api from '../services/api'
@@ -34,6 +35,35 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // ── Session helper functions ──────────────────────────────────
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(LS_AUTH)
+    setUser(null)
+  }, [])
+
+  const getStoredUserId = useCallback(() => {
+    const authDataStr = localStorage.getItem(LS_AUTH)
+    if (!authDataStr) {
+      return user?.id
+    }
+
+    try {
+      const parsed = JSON.parse(authDataStr)
+      return parsed.user?.id || user?.id
+    } catch {
+      return user?.id
+    }
+  }, [user])
+
+  const logout = useCallback(async () => {
+    try {
+      await api.logout(getStoredUserId())
+    } finally {
+      clearSession()
+      navigate('/login', { replace: true })
+    }
+  }, [navigate, clearSession, getStoredUserId])
 
   // ── Session restore on mount ──────────────────────────────────
   useEffect(() => {
@@ -89,32 +119,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     restoreSession()
-  }, [])
+  }, [logout])
 
   // ── Persist helpers ───────────────────────────────────────────
   const persistSession = useCallback((userData, token) => {
     localStorage.setItem(LS_AUTH, JSON.stringify({ token, user: userData }))
     setUser(userData)
   }, [])
-
-  const clearSession = useCallback(() => {
-    localStorage.removeItem(LS_AUTH)
-    setUser(null)
-  }, [])
-
-  const getStoredUserId = useCallback(() => {
-    const authDataStr = localStorage.getItem(LS_AUTH)
-    if (!authDataStr) {
-      return user?.id
-    }
-
-    try {
-      const parsed = JSON.parse(authDataStr)
-      return parsed.user?.id || user?.id
-    } catch {
-      return user?.id
-    }
-  }, [user])
 
   // ── Auth actions ──────────────────────────────────────────────
 
@@ -139,15 +150,6 @@ export const AuthProvider = ({ children }) => {
     persistSession(userData, token)
     navigate('/dashboard', { replace: true })
   }, [navigate, persistSession])
-
-  const logout = useCallback(async () => {
-    try {
-      await api.logout(getStoredUserId())
-    } finally {
-      clearSession()
-      navigate('/login', { replace: true })
-    }
-  }, [navigate, clearSession, getStoredUserId])
 
   // ── Listen for 401 Unauthorized events from httpClient ───────
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Calendar as CalendarIcon, Clock, Plus } from 'lucide-react'
 import DayCell from './DayCell'
 import { getEventStyle, formatDateKey } from './useCalendarState'
@@ -72,7 +72,7 @@ const CalendarGrid = ({
                         <div>
                           <h4 className="text-label-md font-bold text-on-surface leading-tight">{event.title}</h4>
                           <span className="text-[10px] text-[#737686] flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3" /> {event.time} {event.endTime && `- ${event.endTime}`}
+                            <Clock className="w-3 h-3" /> {event.startTime} {event.endTime && `– ${event.endTime}`}
                           </span>
                         </div>
                       </div>
@@ -126,7 +126,7 @@ const CalendarGrid = ({
                     </div>
                   ) : (
                     dayEvents
-                      .sort((a, b) => a.time.localeCompare(b.time))
+                      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
                       .map(event => {
                         const styleObj = getEventStyle(event.type)
                         return (
@@ -141,7 +141,7 @@ const CalendarGrid = ({
                             <h4 className="text-label-md font-bold leading-snug truncate" title={event.title}>{event.title}</h4>
                             <div className="flex items-center gap-1 text-[10px] opacity-80 mt-0.5">
                               <Clock className="w-3 h-3 shrink-0" />
-                              <span>{event.time}</span>
+                              <span>{event.startTime}</span>
                             </div>
                           </div>
                         )
@@ -181,8 +181,8 @@ const CalendarGrid = ({
           <div className="flex-1 flex flex-col gap-1 max-h-[500px] overflow-y-auto pr-2">
             {hourlySlots.map(hour => {
               const slotEvents = selectedDayEvents.filter(e => {
-                if (!e.time) return false
-                const [eh] = e.time.split(':')
+                if (!e.startTime) return false
+                const [eh] = e.startTime.split(':')
                 return `${eh.padStart(2, '0')}:00` === hour
               })
 
@@ -209,7 +209,7 @@ const CalendarGrid = ({
                               <div>
                                 <h4 className="text-label-md font-bold leading-tight">{event.title}</h4>
                                 <span className="text-[10px] flex items-center gap-1 mt-1 opacity-80">
-                                  <Clock className="w-3.5 h-3.5" /> {event.time} {event.endTime && `- ${event.endTime}`} ({event.type})
+                                  <Clock className="w-3.5 h-3.5" /> {event.startTime} {event.endTime && `– ${event.endTime}`} ({event.type})
                                 </span>
                               </div>
                             </div>

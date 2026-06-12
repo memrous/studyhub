@@ -13,12 +13,6 @@ import Timetable from '../components/Timetable'
 import Deadlines from '../components/Deadlines'
 import RecentMaterials from '../components/RecentMaterials'
 
-// Mobile components
-import MobileStats from '../components/MobileStats'
-import MobileTodaySchedule from '../components/MobileTodaySchedule'
-import MobileUrgentDeadlines from '../components/MobileUrgentDeadlines'
-import MobileRecentMaterials from '../components/MobileRecentMaterials'
-
 const DashboardPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -157,10 +151,10 @@ const DashboardPage = () => {
         </div>
 
         {/* Stats Cards Swipe Row */}
-        <MobileStats subjects={subjects} events={events} />
+        <StatsRow subjects={subjects} events={events} />
 
         {/* Mobile Today's Schedule */}
-        <MobileTodaySchedule events={events} subjects={subjects} />
+        <Timetable events={events} subjects={subjects} />
 
         {/* Mobile Subjects List */}
         <section className="flex flex-col gap-3">
@@ -199,10 +193,10 @@ const DashboardPage = () => {
         </section>
 
         {/* Mobile Urgent Deadlines */}
-        <MobileUrgentDeadlines events={events} subjects={subjects} onDeadlineClick={handleDeadlineClick} />
+        <Deadlines events={events} subjects={subjects} onDeadlineClick={handleDeadlineClick} />
 
         {/* Mobile Recent Materials */}
-        <MobileRecentMaterials resources={resources} subjects={subjects} />
+        <RecentMaterials resources={resources} subjects={subjects} />
       </div>
     </>
   )

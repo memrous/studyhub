@@ -28,7 +28,8 @@
  * @property {string}      title       - Display title, e.g. "Midterm Exam"
  * @property {EventType}   type        - Category of the event
  * @property {string}      date        - ISO date string YYYY-MM-DD
- * @property {string}      [time]      - Time range, e.g. "10:00 – 11:30"
+ * @property {string}      [startTime] - Start time, e.g. "10:00"
+ * @property {string}      [endTime]   - End time, e.g. "11:30"
  * @property {EventStatus} [status]    - Completion status
  * @property {string}      [description] - Optional notes
  */

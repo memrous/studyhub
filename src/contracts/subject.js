@@ -21,6 +21,7 @@
  * @property {number}  credits         - ECTS credit count
  * @property {string}  lecturer        - Primary lecturer full name
  * @property {string}  semester        - e.g. "ZS 2024/2025" (Czech: zimní semestr)
+ * @property {boolean} isMandatory     - Whether this subject is mandatory
  * @property {string}  [completionType]- e.g. "Exam", "Credit", "Classified Credit"
  * @property {string}  [description]   - Optional syllabus description
  */

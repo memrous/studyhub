@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -30,7 +30,7 @@ const CalendarView = ({
     activeView,
     setActiveView,
     selectedSubjects,
-    setSelectedSubjects,
+
     isModalOpen,
     setIsModalOpen,
     deleteConfirmId,
@@ -52,7 +52,7 @@ const CalendarView = ({
     newType,
     setNewType,
     SUBJECTS,
-    preparedEvents,
+
     filteredEvents,
     gridDays,
     upcomingEventsList,
@@ -312,8 +312,7 @@ const CalendarView = ({
           setNewTitle(selectedDetailEvent.title)
           setNewSubject(selectedDetailEvent.subject)
           setNewDate(selectedDetailEvent.date)
-          const startTime = selectedDetailEvent.time.split('–')[0].trim()
-          setNewTime(startTime)
+          setNewTime(selectedDetailEvent.startTime)
           setNewType(selectedDetailEvent.type)
           setIsModalOpen(true)
           setSelectedDetailEvent(null)

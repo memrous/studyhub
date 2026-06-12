@@ -34,9 +34,9 @@ const CalendarPage = () => {
   // Clear the router state so a refresh doesn't re-open the event
   useEffect(() => {
     if (location.state?.openEventId) {
-      window.history.replaceState({}, '')
+      navigate(location.pathname, { replace: true, state: null })
     }
-  }, [location.state?.openEventId])
+  }, [location.state?.openEventId, navigate, location.pathname])
 
   if (isLoading) {
     return <PageState variant="loading" title="Loading..." />

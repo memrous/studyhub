@@ -1,4 +1,3 @@
-import React from 'react'
 import { getEventStyle } from './useCalendarState'
 
 const DayCell = ({

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 
 const TYPE_COLOR_MAP = {
@@ -13,9 +13,9 @@ const TYPE_COLOR_MAP = {
 };
 
 const Timetable = ({ events, subjects, onOpenSubject }) => {
-  // Definujeme výchozí datum (červen 2026 podle tvých mock dat)
   const DEFAULT_DATE = useMemo(() => new Date(2026, 5, 7), []);
   const today = new Date(); 
+  const todayStr = today.toISOString().split('T')[0];
 
   const [currentDate, setCurrentDate] = useState(DEFAULT_DATE);
   const [selectedDetailEvent, setSelectedDetailEvent] = useState(null);
@@ -25,7 +25,6 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
   monday.setDate(currentDate.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
   monday.setHours(0, 0, 0, 0);
 
-  // Výpočet referenčního (výchozího) pondělí pro kontrolu limitů zámku
   const defaultMonday = useMemo(() => {
     const dMon = new Date(DEFAULT_DATE);
     const dDay = DEFAULT_DATE.getDay();
@@ -34,11 +33,9 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
     return dMon;
   }, [DEFAULT_DATE]);
 
-  // Výpočet časového rozdílu v týdnech oproti výchozímu týdnu
   const msInWeek = 7 * 24 * 60 * 60 * 1000;
   const weeksDiff = Math.round((monday.getTime() - defaultMonday.getTime()) / msInWeek);
 
-  // Podmínky pro zamknutí šipek (povolený rozsah: -1, 0, +1 týden)
   const isPrevDisabled = weeksDiff <= -1;
   const isNextDisabled = weeksDiff >= 1;
 
@@ -57,7 +54,6 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
   };
 
   const handleToday = () => {
-    // Vrátí kalendář zpět do výchozího testovacího týdnu (nebo na reálný dnešek, pokud bys změnil DEFAULT_DATE)
     setCurrentDate(DEFAULT_DATE);
   };
 
@@ -77,7 +73,7 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
     
     const dayLectures = (events || [])
       .filter(e => (e.type === 'Lecture' || e.type === 'Lab') && e.date === dateStr)
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 
     const isToday = formatDateKey(today) === dateStr;
 
@@ -88,109 +84,163 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
     };
   });
 
+  // Mobile schedule calculations
+  const formattedToday = today.toLocaleDateString('en-US', { 
+    weekday: 'short', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+
+  const todayLectures = (events || [])
+    .filter(e => e.type === 'Lecture' && e.date === todayStr)
+    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
   return (
-    <section className="flex flex-col gap-4 font-inter text-on-surface">
-      {/* Záhlaví s ovládáním */}
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col">
-          <h2 className="text-headline-md text-on-surface font-semibold">Weekly Timetable</h2>
-          <span className="text-sm text-slate-500 capitalize">{formattedDateRange}</span>
+    <>
+      {/* MOBILE LAYOUT: Today's Schedule */}
+      <section className="flex lg:hidden flex-col gap-3 font-inter">
+        <div className="flex justify-between items-center">
+          <h3 className="text-headline-md text-on-surface font-semibold">Today's Schedule</h3>
+          <span className="text-label-md text-[#004ac6] font-bold">{formattedToday}</span>
         </div>
-        
-        <div className="flex items-center gap-2 bg-[#F2F4F6] p-1 rounded-lg border border-[#E2E8F0]">
-          <button 
-            onClick={handlePrevWeek}
-            disabled={isPrevDisabled}
-            className={`px-2 py-1 text-xs font-semibold rounded-md transition-all shadow-sm ${
-              isPrevDisabled 
-                ? 'opacity-40 text-slate-400 bg-transparent' 
-                : 'hover:bg-white text-slate-600 hover:text-slate-900 cursor-pointer'
-            }`}
-          >
-            ← Prev
-          </button>
-          <button 
-            onClick={handleToday}
-            className="px-2 py-1 text-xs font-bold rounded-md bg-white text-[#004ac6] border border-[#E2E8F0] shadow-sm cursor-pointer"
-          >
-            Current
-          </button>
-          <button 
-            onClick={handleNextWeek}
-            disabled={isNextDisabled}
-            className={`px-2 py-1 text-xs font-semibold rounded-md transition-all shadow-sm ${
-              isNextDisabled 
-                ? 'opacity-40 text-slate-400 bg-transparent' 
-                : 'hover:bg-white text-slate-600 hover:text-slate-900 cursor-pointer'
-            }`}
-          >
-            Next →
-          </button>
-        </div>
-      </div>
 
-      {/* Mřížka kalendáře */}
-      <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-ambient grid grid-cols-5 gap-4">
-        {days.map((day) => (
-          <div key={day.name} className="flex flex-col gap-3">
-            {/* Day Header */}
-            <div className="flex justify-center">
-              {day.isToday ? (
-                <span className="text-label-sm bg-[#004ac6] text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold text-center">
-                  {day.name}
-                </span>
-              ) : (
-                <span className="text-label-sm text-[#737686] uppercase tracking-wider text-center block font-semibold">
-                  {day.name}
-                </span>
-              )}
-            </div>
+        <div className="bg-white border border-[#E2E8F0] p-4 rounded-lg shadow-ambient flex flex-col gap-4">
+          {todayLectures.length === 0 ? (
+            <p className="text-body-md text-[#737686] italic text-center py-2">
+              No classes scheduled for today.
+            </p>
+          ) : (
+            todayLectures.map(lec => {
+              const subject = (subjects || []).find(s => s.id === lec.subjectId);
+              const subCode = subject ? subject.code : 'GEN 101';
+              const subName = subject ? subject.name : lec.title;
+              const subLecturer = subject ? subject.lecturer : '';
+              const roomInfo = subject ? (subject.code === 'KMI/DBS' ? 'Room 201' : 'Room 105') : 'Main Hall';
 
-            {/* Karetky s výukou */}
-            <div className="flex flex-col gap-2 min-h-[110px]">
-              {day.lectures.length === 0 ? (
-                <div className="bg-slate-50 border border-dashed border-slate-100 rounded-md flex-1 min-h-[96px] flex items-center justify-center text-[10px] text-slate-400 italic text-center p-1 select-none">
-                  No classes
+              return (
+                <div 
+                  key={lec.id} 
+                  onClick={() => setSelectedDetailEvent({ ...lec, subject: subName, code: subCode })}
+                  className="flex items-center gap-4 relative pl-4 cursor-pointer hover:bg-slate-50/80 p-1.5 -mx-1.5 rounded-md transition-colors group"
+                >
+                  <div className="absolute left-0 w-1 h-8 bg-[#2563eb] rounded-full group-hover:scale-y-105 transition-transform"></div>
+                  <span className="text-label-sm font-semibold text-on-surface shrink-0 pt-0.5 ml-0.5">
+                    {lec.startTime}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-label-md text-on-surface font-bold leading-tight truncate group-hover:text-[#004ac6] transition-colors">
+                      {subName}
+                    </h4>
+                    <span className="text-label-sm text-[#737686] mt-0.5 block truncate">
+                      {roomInfo} • {subLecturer}
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                day.lectures.map(lec => {
-                  const subject = (subjects || []).find(s => s.id === lec.subjectId);
-                  const subCode = subject ? subject.code : 'GEN 101';
-                  const subName = subject ? subject.name : lec.title;
-                  
-                  const colorConfig = TYPE_COLOR_MAP[lec.type] || TYPE_COLOR_MAP['default'];
-                  const startHour = lec.time.split(/[–-]/)[0].trim();
+              );
+            })
+          )}
+        </div>
+      </section>
 
-                  return (
-                    <div 
-                      key={lec.id}
-                      onClick={() => setSelectedDetailEvent({ ...lec, subject: subName, code: subCode })}
-                      title={`${subName} (${lec.time})`}
-                      className={`${colorConfig.bg} border-l-4 ${colorConfig.border} px-3 py-2 rounded-r-md flex flex-col justify-center min-h-[48px] shadow-sm hover:brightness-95 transition-all cursor-pointer`}
-                    >
-                      <span className={`text-[11px] font-bold ${colorConfig.text}`}>
-                        {subCode.split('/')[1] || subCode}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                        {startHour}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+      {/* DESKTOP LAYOUT: Weekly Timetable */}
+      <section className="hidden lg:flex flex-col gap-4 font-inter text-on-surface">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col">
+            <h2 className="text-headline-md text-on-surface font-semibold">Weekly Timetable</h2>
+            <span className="text-sm text-slate-500 capitalize">{formattedDateRange}</span>
           </div>
-        ))}
-      </div>
+          
+          <div className="flex items-center gap-2 bg-[#F2F4F6] p-1 rounded-lg border border-[#E2E8F0]">
+            <button 
+              onClick={handlePrevWeek}
+              disabled={isPrevDisabled}
+              className={`px-2 py-1 text-xs font-semibold rounded-md transition-all shadow-sm ${
+                isPrevDisabled 
+                  ? 'opacity-40 text-slate-400 bg-transparent' 
+                  : 'hover:bg-white text-slate-600 hover:text-slate-900 cursor-pointer'
+              }`}
+            >
+              ← Prev
+            </button>
+            <button 
+              onClick={handleToday}
+              className="px-2 py-1 text-xs font-bold rounded-md bg-white text-[#004ac6] border border-[#E2E8F0] shadow-sm cursor-pointer"
+            >
+              Current
+            </button>
+            <button 
+              onClick={handleNextWeek}
+              disabled={isNextDisabled}
+              className={`px-2 py-1 text-xs font-semibold rounded-md transition-all shadow-sm ${
+                isNextDisabled 
+                  ? 'opacity-40 text-slate-400 bg-transparent' 
+                  : 'hover:bg-white text-slate-600 hover:text-slate-900 cursor-pointer'
+              }`}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
 
-      {/* POP-UP MODAL: DETAIL UDÁLOSTI */}
+        <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-ambient grid grid-cols-5 gap-4">
+          {days.map((day) => (
+            <div key={day.name} className="flex flex-col gap-3">
+              <div className="flex justify-center">
+                {day.isToday ? (
+                  <span className="text-label-sm bg-[#004ac6] text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold text-center">
+                    {day.name}
+                  </span>
+                ) : (
+                  <span className="text-label-sm text-[#737686] uppercase tracking-wider text-center block font-semibold">
+                    {day.name}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 min-h-[110px]">
+                {day.lectures.length === 0 ? (
+                  <div className="bg-slate-50 border border-dashed border-slate-100 rounded-md flex-1 min-h-[96px] flex items-center justify-center text-[10px] text-slate-400 italic text-center p-1 select-none">
+                    No classes
+                  </div>
+                ) : (
+                  day.lectures.map(lec => {
+                    const subject = (subjects || []).find(s => s.id === lec.subjectId);
+                    const subCode = subject ? subject.code : 'GEN 101';
+                    const subName = subject ? subject.name : lec.title;
+                    
+                    const colorConfig = TYPE_COLOR_MAP[lec.type] || TYPE_COLOR_MAP['default'];
+
+                    return (
+                      <div 
+                        key={lec.id}
+                        onClick={() => setSelectedDetailEvent({ ...lec, subject: subName, code: subCode })}
+                        title={`${subName} (${lec.startTime} – ${lec.endTime})`}
+                        className={`${colorConfig.bg} border-l-4 ${colorConfig.border} px-3 py-2 rounded-r-md flex flex-col justify-center min-h-[48px] shadow-sm hover:brightness-95 transition-all cursor-pointer`}
+                      >
+                        <span className={`text-[11px] font-bold ${colorConfig.text}`}>
+                          {subCode.split('/')[1] || subCode}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                          {lec.startTime}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* POP-UP MODAL: DETAIL UDÁLOSTI (Shared by Mobile & Desktop) */}
       {selectedDetailEvent && (() => {
         const targetSubject = (subjects || []).find(s => s.id === selectedDetailEvent.subjectId);
         const styleObj = TYPE_COLOR_MAP[selectedDetailEvent.type] || TYPE_COLOR_MAP['default'];
         
         return (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-opacity">
-            <div className="bg-white rounded-lg shadow-2xl border border-[#E2E8F0] w-full max-w-md overflow-hidden relative font-inter animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="bg-white rounded-lg shadow-2xl border border-[#E2E8F0] w-full max-w-md overflow-hidden relative font-inter text-left animate-in fade-in zoom-in-95 duration-150">
               
               <div className={`px-6 py-4 border-b border-[#E2E8F0] ${styleObj.bg} flex items-center justify-between`}>
                 <div className="flex items-center gap-2">
@@ -212,7 +262,7 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
               <div className="p-6 flex flex-col gap-4.5">
                 <div>
                   <h3 className="text-headline-md font-bold text-on-surface leading-tight">
-                    {selectedDetailEvent.title}
+                    {selectedDetailEvent.title || selectedDetailEvent.subject}
                   </h3>
                   <p className="text-body-md font-semibold text-primary mt-1">
                     {targetSubject ? targetSubject.name : 'Unknown Subject'}
@@ -228,8 +278,8 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
                   </div>
                   <div className="flex items-center gap-2 text-on-surface-variant">
                     <Clock className="w-4 h-4 text-[#737686] shrink-0" />
-                    <span className="text-label-md font-medium text-on-surface">
-                      {selectedDetailEvent.time}
+                    <span className="text-label-md font-medium text-on-surface text-xs md:text-sm">
+                      {selectedDetailEvent.startTime} {selectedDetailEvent.endTime && `– ${selectedDetailEvent.endTime}`}
                     </span>
                   </div>
                 </div>
@@ -277,7 +327,7 @@ const Timetable = ({ events, subjects, onOpenSubject }) => {
           </div>
         );
       })()}
-    </section>
+    </>
   );
 };
 

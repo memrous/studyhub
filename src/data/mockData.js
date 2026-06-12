@@ -20,7 +20,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'John Smith',
     completionType: 'Credit + Exam',
     isMandatory: true,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Exploration of relational databases, SQL optimization, database normalization, transactions, and modern schema design. Essential for backend integration.'
   },
   {
@@ -31,7 +31,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'Jane Doe',
     completionType: 'Credit',
     isMandatory: true,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Building modern full-stack web applications using React, Node.js, and HTTP APIs. Emphasizes components, state management, and deployment.'
   },
   {
@@ -42,7 +42,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'Sarah Jenkins',
     completionType: 'Credit + Exam',
     isMandatory: true,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Foundational concepts of algorithms, data structures, and object-oriented programming. Covers sorting, design patterns, and debugging strategies.'
   },
   {
@@ -53,7 +53,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'Robert Miles',
     completionType: 'Credit + Exam',
     isMandatory: true,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Process scheduling, memory management, filesystems, virtual memory, and concurrent execution in modern operating system kernels.'
   },
   {
@@ -64,7 +64,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'Linda Gray',
     completionType: 'Credit',
     isMandatory: true,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Methodologies for software development life cycles (SDLC), Agile Scrum, team collaboration, version control, and testing techniques.'
   },
   {
@@ -75,7 +75,7 @@ export const INITIAL_SUBJECTS = [
     lecturer: 'Kevin Wright',
     completionType: 'Credit + Exam',
     isMandatory: false,
-    semester: 'Winter',
+    semester: 'ZS 2024/2025',
     description: 'Study of computer networking protocols, OSI model, IP routing, transport controls (TCP/UDP), and basic network security.'
   }
 ];
@@ -106,7 +106,8 @@ export const generateRecurringLectures = () => {
         subjectId: 3, // Programming
         title: 'Programming Lecture',
         date: dateStr,
-        time: '09:00 – 10:30',
+        startTime: '09:00',
+        endTime: '10:30',
         type: 'Lecture'
       });
     } else if (day === 2) { // Tuesday
@@ -115,14 +116,16 @@ export const generateRecurringLectures = () => {
         subjectId: 1, // Database Systems
         title: 'Database Systems Lecture',
         date: dateStr,
-        time: '10:00 – 11:30',
+        startTime: '10:00',
+        endTime: '11:30',
         type: 'Lecture'
       }, {
         id: id++,
         subjectId: 2, // Web Applications
         title: 'Web Applications Lecture',
         date: dateStr,
-        time: '14:00 – 15:30',
+        startTime: '14:00',
+        endTime: '15:30',
         type: 'Lecture'
       });
     } else if (day === 3) { // Wednesday
@@ -131,7 +134,8 @@ export const generateRecurringLectures = () => {
         subjectId: 4, // Operating Systems
         title: 'Operating Systems Lecture',
         date: dateStr,
-        time: '09:00 – 10:30',
+        startTime: '09:00',
+        endTime: '10:30',
         type: 'Lecture'
       });
     } else if (day === 4) { // Thursday
@@ -140,7 +144,8 @@ export const generateRecurringLectures = () => {
         subjectId: 5, // Software Engineering
         title: 'Software Engineering Seminar',
         date: dateStr,
-        time: '11:30 – 13:00',
+        startTime: '11:30',
+        endTime: '13:00',
         type: 'Lecture'
       });
     } else if (day === 5) { // Friday
@@ -149,7 +154,8 @@ export const generateRecurringLectures = () => {
         subjectId: 6, // Computer Networks
         title: 'Computer Networks Lecture',
         date: dateStr,
-        time: '10:00 – 11:30',
+        startTime: '10:00',
+        endTime: '11:30',
         type: 'Lecture'
       });
     }
@@ -166,7 +172,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 1,
     title: 'Database Project',
     date: getRelativeDate(2), // due in 2 days
-    time: '23:59',
+    startTime: '23:59',
+    endTime: '23:59',
     type: 'Assignment',
     status: 'In Progress'
   },
@@ -175,7 +182,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 2,
     title: 'Web Applications Test',
     date: getRelativeDate(5), // due in 5 days
-    time: '14:00',
+    startTime: '14:00',
+    endTime: '15:30',
     type: 'Test',
     status: 'Not Started'
   },
@@ -184,7 +192,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 3,
     title: 'Programming Exam',
     date: '2026-12-20', // hardcoded to match the December 20 spec
-    time: '09:00',
+    startTime: '09:00',
+    endTime: '11:00',
     type: 'Exam',
     status: 'Not Started'
   },
@@ -193,7 +202,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 4,
     title: 'Operating Systems Midterm',
     date: getRelativeDate(10),
-    time: '10:00',
+    startTime: '10:00',
+    endTime: '11:30',
     type: 'Test',
     status: 'Not Started'
   },
@@ -202,7 +212,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 5,
     title: 'Requirements Doc Draft',
     date: getRelativeDate(8),
-    time: '11:59',
+    startTime: '11:59',
+    endTime: '11:59',
     type: 'Assignment',
     status: 'Not Started'
   },
@@ -211,7 +222,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 1,
     title: 'SQL Practice Assignment',
     date: getRelativeDate(-4),
-    time: '18:00',
+    startTime: '18:00',
+    endTime: '19:30',
     type: 'Assignment',
     status: 'Submitted'
   },
@@ -220,7 +232,8 @@ const INITIAL_STATIC_EVENTS = [
     subjectId: 2,
     title: 'HTML & CSS Fundamentals',
     date: getRelativeDate(-7),
-    time: '12:00',
+    startTime: '12:00',
+    endTime: '13:00',
     type: 'Assignment',
     status: 'Submitted'
   }
@@ -236,7 +249,7 @@ export const INITIAL_RESOURCES = [
     type: 'PDF',
     description: 'Comprehensive notes covering core SQL operations, queries, and multi-table joins.',
     url: '#',
-    uploadDate: getRelativeDate(-12),
+    uploadedAt: getRelativeDate(-12),
     size: '2.4 MB'
   },
   {
@@ -246,7 +259,7 @@ export const INITIAL_RESOURCES = [
     type: 'SLIDES',
     description: 'Course slides detailing functional components, state, hooks, and local styling structures.',
     url: '#',
-    uploadDate: getRelativeDate(-5),
+    uploadedAt: getRelativeDate(-5),
     size: '4.8 MB'
   },
   {
@@ -256,7 +269,7 @@ export const INITIAL_RESOURCES = [
     type: 'PDF',
     description: 'Single page quick reference sheet covering normalization forms and command syntax.',
     url: '#',
-    uploadDate: getRelativeDate(-2),
+    uploadedAt: getRelativeDate(-2),
     size: '1.1 MB'
   },
   {
@@ -266,7 +279,7 @@ export const INITIAL_RESOURCES = [
     type: 'NOTES',
     description: 'Review of paging, segmentation, page replacement policies, and translation-lookaside buffers.',
     url: '#',
-    uploadDate: getRelativeDate(-10),
+    uploadedAt: getRelativeDate(-10),
     size: '1.5 MB'
   },
   {
@@ -276,7 +289,7 @@ export const INITIAL_RESOURCES = [
     type: 'LINK',
     description: 'External documentation summarizing design rules, status codes, and HTTP verb structures.',
     url: 'https://example.com/rest-guide',
-    uploadDate: getRelativeDate(-8),
+    uploadedAt: getRelativeDate(-8),
     size: 'External Link'
   },
   {
@@ -286,7 +299,7 @@ export const INITIAL_RESOURCES = [
     type: 'PDF',
     description: 'Visual reference guide covering repository setup, staging, branch merging, and rebasing.',
     url: '#',
-    uploadDate: getRelativeDate(-15),
+    uploadedAt: getRelativeDate(-15),
     size: '0.8 MB'
   }
 ];

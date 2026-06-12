@@ -13,7 +13,7 @@
  */
 
 /**
- * @typedef {'PDF'|'Link'|'Video'|'Note'|'Image'|'Other'} MaterialType
+ * @typedef {'PDF'|'Link'|'Video'|'Note'|'Image'|'SLIDES'|'Other'} MaterialType
  */
 
 /**
@@ -25,6 +25,8 @@
  * @property {string}       [url]       - External URL or file path
  * @property {string}       [content]   - Inline text content (for notes)
  * @property {string}       [uploadedAt]- ISO datetime string
+ * @property {string}       [size]      - Display file size, e.g. "4.8 MB"
+ * @property {string}       [description] - Short description of resource contents
  */
 
 export {} // keeps this a proper ES module

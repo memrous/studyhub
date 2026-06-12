@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { X, Calendar as CalendarIcon, Clock } from 'lucide-react'
 import { getEventStyle } from './useCalendarState'
 
@@ -58,7 +58,7 @@ const EventDetailModal = ({
             <div className="flex items-center gap-2 text-on-surface-variant">
               <Clock className="w-4 h-4 text-[#737686] shrink-0" />
               <span className="text-label-md font-medium text-on-surface">
-                {selectedDetailEvent.time} {selectedDetailEvent.endTime && `– ${selectedDetailEvent.endTime}`}
+                {selectedDetailEvent.startTime} {selectedDetailEvent.endTime && `– ${selectedDetailEvent.endTime}`}
               </span>
             </div>
           </div>
