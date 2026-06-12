@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
-import { useAppState } from '../context/AppStateContext'
+import { useSubjects } from '../hooks/useSubjects'
 import SubjectsView from '../components/SubjectsView'
 import PageState from '../components/PageState'
 
 const SubjectsPage = () => {
   const navigate = useNavigate()
-  const { subjects, handleAddSubject, isLoading, error, reloadData } = useAppState()
+  const { data: subjects, addSubject: handleAddSubject, isLoading, error, refetch: reloadData } = useSubjects()
 
   if (isLoading) {
     return <PageState variant="loading" title="Loading..." />

@@ -2,6 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { Calendar as CalendarIcon, BookOpen } from 'lucide-react'
 import { useAppState } from '../context/AppStateContext'
 import { useAuth } from '../context/AuthContext'
+import { useSubjects } from '../hooks/useSubjects'
+import { useEvents } from '../hooks/useEvents'
+import { useResources } from '../hooks/useResources'
 import PageState from '../components/PageState'
 
 import StatsRow from '../components/StatsRow'
@@ -19,7 +22,24 @@ import MobileRecentMaterials from '../components/MobileRecentMaterials'
 const DashboardPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { subjects, events, resources, todayDeadlinesCount, isLoading, error, reloadData } = useAppState()
+  const { todayStr } = useAppState()
+
+  const { data: subjects, isLoading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useSubjects()
+  const { data: events, isLoading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents()
+  const { data: resources, isLoading: resourcesLoading, error: resourcesError, refetch: refetchResources } = useResources()
+
+  const isLoading = subjectsLoading || eventsLoading || resourcesLoading
+  const error = subjectsError || eventsError || resourcesError
+
+  const reloadData = () => {
+    refetchSubjects()
+    refetchEvents()
+    refetchResources()
+  }
+
+  const todayDeadlinesCount = events.filter(
+    (e) => e.date === todayStr && e.type !== 'Lecture'
+  ).length
 
   if (isLoading) {
     return <PageState variant="loading" title="Loading..." />

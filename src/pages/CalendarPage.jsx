@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { useAppState } from '../context/AppStateContext'
+import { useSubjects } from '../hooks/useSubjects'
+import { useEvents } from '../hooks/useEvents'
 import CalendarView from '../components/CalendarView'
 import PageState from '../components/PageState'
 
@@ -11,16 +12,24 @@ const CalendarPage = () => {
   const [openEventId, setOpenEventId] = useState(
     location.state?.openEventId ?? null
   )
+
+  const { data: subjects, isLoading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useSubjects()
   const {
-    events,
-    subjects,
-    handleCreateEvent,
-    handleEditEvent,
-    handleDeleteEvent,
-    isLoading,
-    error,
-    reloadData,
-  } = useAppState()
+    data: events,
+    isLoading: eventsLoading,
+    error: eventsError,
+    refetch: refetchEvents,
+    createEvent: handleCreateEvent,
+    editEvent: handleEditEvent,
+    deleteEvent: handleDeleteEvent,
+  } = useEvents()
+
+  const isLoading = subjectsLoading || eventsLoading
+  const error = subjectsError || eventsError
+  const reloadData = () => {
+    refetchSubjects()
+    refetchEvents()
+  }
 
   // Clear the router state so a refresh doesn't re-open the event
   useEffect(() => {

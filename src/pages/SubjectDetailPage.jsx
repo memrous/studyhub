@@ -1,11 +1,22 @@
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
-import { useAppState } from '../context/AppStateContext'
+import { useSubjects } from '../hooks/useSubjects'
+import { useEvents } from '../hooks/useEvents'
+import { useResources } from '../hooks/useResources'
 import SubjectDetailView from '../components/SubjectDetailView'
+import PageState from '../components/PageState'
 
 const SubjectDetailPage = () => {
   const { subjectId } = useParams()
   const navigate = useNavigate()
-  const { subjects, events, resources, handleUpdateEventStatus, handleCreateEvent, handleUploadResource } = useAppState()
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects()
+  const { data: events, updateEventStatus: handleUpdateEventStatus, createEvent: handleCreateEvent, isLoading: eventsLoading } = useEvents()
+  const { data: resources, uploadResource: handleUploadResource, isLoading: resourcesLoading } = useResources()
+
+  const isLoading = subjectsLoading || eventsLoading || resourcesLoading
+
+  if (isLoading) {
+    return <PageState variant="loading" title="Loading..." />
+  }
 
   const subject = subjects.find((s) => s.id === Number(subjectId)) || null
 
